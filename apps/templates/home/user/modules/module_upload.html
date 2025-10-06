@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Modul yuklash {% endblock %}
+
+{% block body_class %} dashboard {% endblock body_class %}
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+{% endblock stylesheets %}
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Excel orqali modul qo‘shish</h1>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Modullarni yuklash</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="id_study_field">Yo‘nalishni tanlang</label>
+                                {{ form.study_field }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_filial">Filialni tanlang</label>
+                                {{ form.filial }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_file">Excel fayl yuklang</label>
+                                {{ form.file }}
+                            </div></br>
+                            <button type="submit" class="btn btn-success float-right">Yuklash</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}

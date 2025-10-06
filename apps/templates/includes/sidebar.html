@@ -1,0 +1,98 @@
+<nav id="sidebar" class="sidebar js-sidebar">
+    <div class="sidebar-content js-simplebar">
+
+        <ul class="sidebar-nav">
+            <li class="sidebar-header">
+                Bo'limlar
+            </li>
+            <li class="sidebar-item {% if 'dashboard' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'home' %}">
+                    <i class="align-middle" data-feather="sliders"></i> <span class="align-middle">Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if 'groups' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'groups' %}">
+                    <i class="align-middle" data-feather="users"></i> <span class="align-middle">Guruhlar</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if 'teachers' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'teachers' %}">
+                    <i class="align-middle" data-feather="user"></i> <span class="align-middle">O'qituvchilar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'modules' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'study_module_list' %}">
+                    <i class="align-middle" data-feather="book-open"></i> <span class="align-middle">Fan Modullari</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'form_categories' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'form_category_list' %}">
+                    <i class="align-middle" data-feather="book"></i> <span class="align-middle">So'rovnoma Kategoriyalari</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'questions' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'question_list' %}">
+                    <i class="align-middle" data-feather="list"></i> <span class="align-middle">Savollar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'answers' in segment %} active {% endif %}">
+                <a class="sidebar-link" href="{% url 'answer_list' %}">
+                    <i class="align-middle" data-feather="message-circle"></i> <span class="align-middle">Javoblar</span>
+                </a>
+            </li>
+
+            
+            {% comment %}<li class="sidebar-item {% if 'cats' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_categories' %}">
+                    <i class="align-middle" data-feather="grid"></i> <span class="align-middle">Kategoriyalar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'subcategories' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_subcategories' %}">
+                    <i class="align-middle" data-feather="command"></i> <span
+                        class="align-middle">SubKategoriyalar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'manufacturer' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_manufacturers' %}">
+                    <i class="align-middle" data-feather="star"></i> <span class="align-middle">Brandlar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'product' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_products' %}">
+                    <i class="align-middle" data-feather="shopping-bag"></i> <span
+                        class="align-middle">Maxsulotlar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'sales' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_sales' %}">
+                    <i class="align-middle" data-feather="align-left"></i> <span class="align-middle">Aksiyalar</span>
+                </a>
+            </li>
+
+            <li class="sidebar-item {% if 'notifications' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_notifications' %}">
+                    <i class="align-middle" data-feather="message-square"></i> <span class="align-middle">Bildirishnomalar</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if 'story_category' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_story_category' %}">
+                    <i class="align-middle" data-feather="message-square"></i> <span class="align-middle">Story Category</span>
+                </a>
+            </li>
+            <li class="sidebar-item {% if 'stories' in segment %} active {% endif %}">
+                <a class="sidebar-link " href="{% url 'home_stories' %}">
+                    <i class="align-middle" data-feather="message-square"></i> <span class="align-middle">Story</span>
+                </a>
+            </li> {% endcomment %}
+        </ul>
+    </div>
+</nav>

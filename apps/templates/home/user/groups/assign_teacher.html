@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} O'quv Modullari {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %} 
+<style>
+	.x {
+    color: red;
+	}
+	.check {
+		color: green;
+	}
+
+</style>
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+{% endblock stylesheets %}
+
+{% block content %}
+    <main class="content">
+        <div class="container-fluid p-0">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">O‘qituvchi biriktirish: {{ gmt.study_module.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="id_teacher">O‘qituvchi</label>
+                            {{ form.teacher }} </br>
+                        </div>
+                        <button type="submit" class="btn btn-success">Saqlash</button>
+                        <a href="{% url 'group_modules' gmt.group.id %}" class="btn btn-secondary">Bekor qilish</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock content %}
+
+{% block javascripts %}
+	<script src="{% static 'js/app.js' %}"></script>
+
+{% endblock javascripts %}

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>
+    Kpi Bot - {% block title %}{% endblock %}
+  </title> 
+
+  {% block stylesheets %}{% endblock stylesheets %}
+
+</head>
+<body class="hold-transition {% block body_class %}{% endblock body_class %}">
+<div class="wrapper">
+
+  {% include 'includes/sidebar.html' %}
+  <div class="main">
+  
+    {% include 'includes/navigation.html' %}
+  
+    {% block content %}
+
+    {% endblock content %}
+
+  {% include 'includes/footer.html' %}
+</div>
+
+</div>
+<!-- ./wrapper -->
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}
+
+</body>
+</html>

@@ -1,0 +1,37 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}Savolni tahrirlash{% endblock %}
+{% block body_class %}dashboard{% endblock %}
+
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <h1>Savolni tahrirlash</h1>
+  </section>
+
+  <section class="content">
+    <div class="card card-warning">
+      <div class="card-header">
+        <h3 class="card-title">Savolni o‘zgartirish</h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-warning float-right">Yangilash</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block javascripts %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}
+

@@ -1,0 +1,122 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Ish jadvali {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<style>
+.weekday-label {
+    display: inline-block;
+    background-color: #D3E2F7; /* Standart rang */
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 14px;
+    margin: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.weekday-label.selected {
+    background-color: #4A90E2 !important; 
+}
+</style>
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+{% block content %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Jadval yaratish</h1>
+                </div>
+            </div>
+        </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Jadval</h3>
+                    </div>
+                    <div class="card-body">
+                        <form role="form" method="post" action="" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group col-12 col-md-4">
+                                <label for="id_location">Xodim</label>
+                                {{ form.employee }}
+                            </div>
+                            <br>
+                            <div class="form-group mb-3">
+                                <label for="{{ form.weekday.id_for_label }}">Hafta kunlari</label>
+                                <br>
+                                <div class="row form-group">
+                                    {% for checkbox in form.weekday %}
+                                        <div class="form-group">
+                                            <label class="form-check-label weekday-label {% if checkbox.data.selected %}selected{% endif %}" 
+                                                for="{{ checkbox.id_for_label }}"
+                                                onclick="toggleWeekday('{{ checkbox.id_for_label }}')">
+                                                {{ checkbox.choice_label }}
+                                            </label>
+                                            <input type="checkbox" 
+                                                name="{{ checkbox.data.name }}" 
+                                                value="{{ checkbox.data.value }}" 
+                                                id="{{ checkbox.id_for_label }}"
+                                                {% if checkbox.data.selected %}checked{% endif %}
+                                                onchange="toggleWeekday(this)"
+                                                style="display: none;">
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="{{ form.start.id_for_label }}">Kelish</label>
+                                <div class="col-12 col-md-4">
+                                    {{ form.start }}
+                                </div>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="{{ form.end.id_for_label }}">Ketish</label>
+                                <div class="col-12 col-md-4">
+                                    {{ form.end }}
+                                </div>
+                            </div>
+                            <!-- Submit tugmasi -->
+                            <div class="row mt-3">
+                                <div class="col-1">
+                                    <input type="submit" class="btn btn-success float-end" value="Qo'shish">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                <!-- /.card-body -->
+            </div><!-- /.card -->
+        </div>
+        <!-- /.card -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% endblock content %}
+{% block javascripts %}
+<script>
+    function toggleWeekday(checkbox) {
+        const label = document.querySelector(`label[for="${checkbox.id}"]`);
+        if (checkbox.checked) {
+            label.classList.add('selected');
+        } else {
+            label.classList.remove('selected');
+        }
+    }
+</script>
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}

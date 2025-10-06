@@ -1,0 +1,39 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Javob formasi {% endblock %}
+{% block body_class %} dashboard {% endblock body_class %}
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>{{ title }}</h1>
+    </section>
+
+    <section class="content">
+        <div class="card card-primary">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <label for="id_question">Savol</label><br>
+                    {{ form.question }}<br><br>
+                    <label for="id_answer_uz">Javob (uz)</label><br>
+                    {{ form.answer_uz }}<br><br>
+                    <label for="id_answer_ru">Javob (ru)</label><br>
+                    {{ form.answer_ru }}<br><br>
+                    <label for="id_answers_count">Javob bali</label><br>
+                    {{ form.score }}<br><br>
+                    <button type="submit" class="btn btn-success">Saqlash</button>
+                    <a href="{% url 'answer_list' %}" class="btn btn-secondary">Bekor qilish</a>
+                </form>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+{% block javascripts %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}

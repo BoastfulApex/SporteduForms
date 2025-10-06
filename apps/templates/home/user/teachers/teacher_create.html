@@ -1,0 +1,64 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Ish jadvali {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+{% block content %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Jadval yaratish</h1>
+                </div>
+            </div>
+        </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Guruh yaratish</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="id_name">Ism</label>
+                                {{ form.name }}</br>
+                            </div>
+                            <div class="form-group">
+                                <label for="id_filial">Filial</label>
+                                {{ form.filial }}</br>
+                            </div>
+                            <button type="submit" class="btn btn-success float-right">Saqlash</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.card -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% endblock content %}
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}
+

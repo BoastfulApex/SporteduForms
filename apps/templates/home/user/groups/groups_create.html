@@ -1,0 +1,110 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Ish jadvali {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+{% block content %}
+
+<!-- Content Wrapper. Contains page content -->
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Jadval yaratish</h1>
+                </div>
+            </div>
+        </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">Guruh yaratish</h3>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="form-group">
+                                <label for="id_year">Nomi Uz</label>
+                                {{ form.name_uz }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_year">Nomi Ru</label>
+                                {{ form.name_ru }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_year">Yo'nalish</label>
+                                {{ form.study_field }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_year">Yil</label>
+                                {{ form.year }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_month">Oy</label>
+                                {{ form.month }}
+                            </div></br>
+
+                            <div class="form-group">
+                                <label for="id_filial">Filial</label>
+                                {{ form.filial }}
+                            </div></br>
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <input type="submit" class="btn btn-success float-right" value="Saqlash">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /.card -->
+    </section>
+    <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% endblock content %}
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $("#id_year").change(function () {
+            var yearId = $(this).val();
+            $.ajax({
+                url: "{% url 'ajax_load_months' %}",
+                data: {
+                    'year_id': yearId
+                },
+                success: function (data) {
+                    var $month = $("#id_month");
+                    $month.empty();
+                    $.each(data, function (index, item) {
+                        $month.append(new Option(item.name, item.id));
+                    });
+                }
+            });
+        });
+    });
+</script>
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}
+

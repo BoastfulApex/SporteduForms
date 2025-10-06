@@ -1,0 +1,80 @@
+
+{% extends "layouts/base.html" %}
+{% load static %}
+
+{% block title %}{{title}}{% endblock %}
+{% block body_class %}dashboard{% endblock body_class %}
+
+{% block stylesheets %}
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>So'rovnoma Kategoriyasi</h1>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-8 mx-auto">
+        <div class="card card-primary shadow">
+          <div class="card-header">
+            <h3 class="card-title">{{title}}</h3>
+          </div>
+
+          <div class="card-body">
+            <form method="post">
+              {% csrf_token %}
+
+              <div class="form-group">
+                <label for="id_name_uz">Nomi (UZ)</label>
+                {{ form.name_uz }}
+                <br>
+              </div>
+
+              <div class="form-group">
+                <label for="id_name_ru">Nomi (RU)</label>
+                {{ form.name_ru }}
+                <br>
+              </div>
+
+              <div class="form-group form-check">
+                <label for="id_active">Faol</label>
+                {{ form.active }}
+                <br>
+              </div>
+
+              <div class="form-group">
+                <label for="id_filial">Filial</label>
+                {{ form.filial }}
+                <br>
+              </div>
+
+              <div class="form-group form-check">
+                <label for="id_for_rating">Reyting uchun</label>
+                {{ form.for_rating }}
+                <br>
+              </div>
+
+              <button type="submit" class="btn btn-success float-right">Saqlash</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}
+

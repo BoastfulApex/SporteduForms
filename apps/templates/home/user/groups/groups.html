@@ -1,0 +1,127 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Guruhlar {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %} 
+<style>
+	.x {
+    color: red;
+	}
+	.check {
+		color: green;
+	}
+
+</style>
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+{% endblock stylesheets %}
+
+{% block content %}
+
+			<main class="content">
+				<div class="container-fluid p-0">
+
+					<form class="input-group mb-4" method="get">
+						<input class="form-control" type="text" name="q" value="{{ search_query }}">
+						<button class="input-group-text btn btn-primary" type="submit">Izlash</button>
+					</form>
+
+					<div class="row">
+						<div class="col-12 col-lg-12 col-xxl-12 d-flex">
+							<div class="card flex-fill">
+								<div class="card-header">
+
+									<h5 class="card-title mb-0">Guruhlar ro'yxati</h5>
+									<h5 class="card-title mb-0">{{ search_query}}</h5>
+								</div>
+								<table class="table table-hover my-0">
+									<thead>
+										<tr>
+											<th></th>
+											<th>Nomi</th>
+											<th class="d-none d-xl-table-cell">O'quv yo'nalishi</th>
+											<th class="d-none d-xl-table-cell">O'quv Oyi</th>
+											<th></th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody>
+									{% for group in page_obj %}
+										<tr>
+											<td></td>
+											<td class="d-none d-xl-table-cell">
+												{{ group.name_uz }}
+											</td>											
+											<td class="d-none d-xl-table-cell">{{ group.study_field.study_field_uz }}</td>
+											<td class="d-none d-xl-table-cell">{{ group.month.name }} / {{ group.year.year }}</td>
+											<td class="d-none d-md-table-cell">
+												<div class="stat text-primary">
+													<a href="{% url 'group_modules' group.id %}" title="Fan Modullari">
+														<i class="align-middle" data-feather="book-open"></i>
+													</a>
+												</div>
+												{% comment %} <div class="col-auto d-flex">
+													<div class="stat text-primary">
+														<a href="{% url 'group_update' group.id %}">
+															<i class="align-middle" data-feather="edit-3"></i>
+														</a>
+													</div>
+													<div class="stat text-primary">
+														<a href="{% url 'group_report' group.id %}" title="Hisobot">
+															<i class="align-middle" data-feather="calendar"></i>
+														</a>
+													</div>
+												</div> {% endcomment %}
+											</td>
+											<td class="d-none d-md-table-cell">
+												<div class="col-auto">
+													<div class="stat text-primary">
+														<div class="stat text-primary">
+															<a href="{% url 'group_delete' group.id %}"><i
+																	class="align-middle"
+																	data-feather="delete"></i></a>
+														</div>
+													</div>
+												</div>
+
+											</td>
+										</tr>
+									{% endfor %}
+									<a class="btn btn-outline-success text-right" href="{% url 'group_create' %}">
+										<i class="fas fa-plus"></i>Qo'shish
+									</a>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+					<div class="pagination">
+						<span class="step-links">
+							{% if page_obj.has_previous %}
+								<a href="?q={{ search_query }}&page=1">&laquo; Boshiga</a>
+								<a href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}">&lsaquo; ortga</a>
+							{% endif %}
+
+							<span class="current-page">
+								{{ page_obj.number }} | {{ page_obj.paginator.num_pages }}
+							</span>
+
+							{% if page_obj.has_next %}
+								<a href="?q={{ search_query }}&page={{ page_obj.next_page_number }}">keyingi &rsaquo;</a>
+								<a href="?q={{ search_query }}&page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
+							{% endif %}
+						</span>
+					</div>
+                </div>
+            </main>
+{% endblock content %}
+
+{% block javascripts %}
+	<script src="{% static 'js/app.js' %}"></script>
+
+
+{% endblock javascripts %}

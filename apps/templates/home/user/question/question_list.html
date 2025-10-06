@@ -1,0 +1,102 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %}Savollar{% endblock %}
+
+{% block body_class %} dashboard {% endblock body_class %}
+
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<main class="content">
+  <div class="container-fluid p-0">
+
+    <!-- Qidiruv -->
+    <form class="input-group mb-4" method="get">
+      <input class="form-control" type="text" name="q" value="{{ search_query }}" placeholder="Savolni qidirish...">
+      <button class="input-group-text btn btn-primary" type="submit">Izlash</button>
+    </form>
+
+    <div class="row">
+      <div class="col-12 col-lg-12 col-xxl-12 d-flex">
+        <div class="card flex-fill">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Savollar ro'yxati</h5>
+          </div>
+
+          <table class="table table-hover my-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Savol (uz)</th>
+                <th>Ko‘p javob</th>
+                <th>Matnli javob</th>
+                <th>Faol</th>
+                <th>Amallar</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for question in page_obj %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ question.question_uz|truncatechars:70 }}</td>
+                <td>{% if question.multi_answer %}✅{% else %}❌{% endif %}</td>
+                <td>{% if question.text_answer %}✅{% else %}❌{% endif %}</td>
+                <td>{% if question.active %}🟢{% else %}⚪{% endif %}</td>
+                <td class="d-none d-md-table-cell">
+                    <div class="d-flex align-items-center gap-3">
+                        <a href="{% url 'question_edit' question.id %}" class="text-primary" title="Tahrirlash">
+                            <i class="align-middle" data-feather="edit-3"></i>
+                        </a>
+                        <a href="{% url 'question_delete' question.id %}" class="text-danger" title="O‘chirish">
+                            <i class="align-middle" data-feather="delete"></i>
+                        </a>
+                    </div>
+                </td>
+                <td>
+                </td>
+              </tr>
+              {% empty %}
+            <a class="btn btn-outline-success" href="{% url 'question_create' %}">
+              <i class="fas fa-plus"></i> Qo'shish
+            </a>
+              <tr>
+                <td colspan="7" class="text-center text-muted">Savollar topilmadi</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination mt-3">
+      <span class="step-links">
+        {% if page_obj.has_previous %}
+          <a href="?q={{ search_query }}&page=1">&laquo; Boshiga</a>
+          <a href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}">&lsaquo; Orqaga</a>
+        {% endif %}
+
+        <span class="current-page">
+          {{ page_obj.number }} | {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+          <a href="?q={{ search_query }}&page={{ page_obj.next_page_number }}">Keyingi &rsaquo;</a>
+          <a href="?q={{ search_query }}&page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
+        {% endif %}
+      </span>
+    </div>
+
+  </div>
+</main>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}
+

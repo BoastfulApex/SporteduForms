@@ -1,0 +1,70 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Guruh modullari {% endblock %}
+
+{% block body_class %} dashboard {% endblock body_class %}
+
+{% block stylesheets %}
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<main class="content">
+    <div class="container-fluid p-0">
+
+        <div class="row">
+            <div class="col-12 col-lg-12 col-xxl-12 d-flex">
+                <div class="card flex-fill">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            {{ group.name_uz }} - {{ group.month.name }}/{{ group.year.year }}  uchun modullar va o‘qituvchilar
+                        </h5>
+                    </div>
+                    <table class="table table-hover my-0">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Modul</th>
+                                <th>O‘qituvchi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for gm in modules %}
+                            <tr>
+                                <td></td>
+                                <td>{{ gm.study_module.name }}</td>
+                                <td>
+                                    {% if gm.teacher %}
+                                        <a href="{% url 'assign_teacher' gm.id %}">{{ gm.teacher.name }}</a>
+                                    {% else %}
+                                        <div class="col-auto">
+                                            <div class="stat text-primary">
+                                                <div class="stat text-primary">
+                                                    <a href="{% url 'assign_teacher' gm.id %}"><i
+                                                            class="align-middle"
+                                                            data-feather="user-plus"></i></a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="2">Hech qanday modul topilmadi</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}
