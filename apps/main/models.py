@@ -80,7 +80,7 @@ class TelegramUser(models.Model):
     name = models.CharField(max_length=1000, null=True, blank=True)
     username = models.CharField(max_length=100, null=True, blank=True)
 
-    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, related_name="telegram_users")
+    filial = models.ForeignKey(Filial, on_delete=models.CASCADE, related_name="telegram_users", null=True, blank=True)
     age = models.IntegerField(null=True)
     sport_type = models.CharField(max_length=100, null=True, blank=True)
     experience = models.IntegerField(null=True, blank=True)
@@ -89,6 +89,7 @@ class TelegramUser(models.Model):
     lang = models.CharField(max_length=10, null=True)
     study_period = models.CharField(max_length=50, null=True)
     field_of_study = models.ForeignKey(StudyField, null=True, blank=True, on_delete=models.SET_NULL, related_name="telegram_users")
+    finish = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.telegram_id}"
@@ -98,6 +99,7 @@ class Student(models.Model):
     telegram_user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, related_name="students")
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="students")
     created_at = models.DateTimeField(default=timezone.now)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return f'{self.telegram_user} - {self.group}'
@@ -109,7 +111,7 @@ class StudyModule(models.Model):
     filial = models.ForeignKey(Filial, on_delete=models.CASCADE, related_name="modules")
 
     def __str__(self):
-        return self.name_uz or self.name_ru
+        return self.name
 
 
 class Cafedra(models.Model):
@@ -134,6 +136,7 @@ class GroupModuleTeacher(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="teacher_modules", null=True)
     study_module = models.ForeignKey(StudyModule, on_delete=models.CASCADE, related_name="teacher_modules")
     group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="teacher_modules")
+    active = models.BooleanField(default=False, null=True)
 
     def __str__(self):
         return f'{self.teacher} - {self.study_module}'

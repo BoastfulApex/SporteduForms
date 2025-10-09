@@ -12,6 +12,7 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from apps.forms.forms import *
 import openpyxl
+from django.urls import reverse
 
 
 
@@ -233,6 +234,19 @@ def assign_teacher(request, group_module_id):
         "gmt": gmt,
         'segment': 'groups',
     })
+    
+
+def toggle_group_module_teacher_active(request, pk):
+    instance = get_object_or_404(GroupModuleTeacher, pk=pk)
+    if request.method == "POST":
+        form = GroupModuleTeacherActiveForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            return redirect("group_modules", group_id=instance.group.id)
+    else:
+        form = GroupModuleTeacherActiveForm(instance=instance)
+    return render(request, "home/user/groups/edit_active.html", {"form": form, "instance": instance, 'segment': 'groups'})
+
 
 
 def form_category_list(request):
@@ -389,3 +403,74 @@ def answer_delete(request, pk):
         answer.delete()
         return redirect("answer_list")
     return render(request, "home/user/answers/answer_delete.html", {"answer": answer, "segment": "answers"})
+
+
+# def add_answer_view(request):
+#     """
+#     Bitta question tanlanadi va bir nechta javoblar formset orqali kiritiladi.
+#     """
+#     title = "Javoblar qo‘shish"
+#     question_form = QuestionSelectForm(request.POST or None)
+#     formset = AddAnswerFormSet(request.POST or None, queryset=Answer.objects.none())
+
+#     if request.method == "POST":
+#         if question_form.is_valid() and formset.is_valid():
+#             question = question_form.cleaned_data['question']
+
+#             for form in formset:
+#                 if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+#                     answer = form.save(commit=False)
+#                     answer.question = question
+#                     answer.save()
+
+#             return redirect('answer_list')
+#         else:
+#             print(question_form.errors, formset.errors)
+#     context = {
+#         "title": title,
+#         "form": question_form,
+#         "formset": formset,
+#     }
+#     return render(request, 'home/user/answers/answer_dynamic_form.html', context)
+
+
+def add_answer_view(request):
+    title = "Javoblar qo‘shish"
+    question_form = QuestionSelectForm(request.POST or None)
+    formset = AddAnswerFormSet(request.POST or None, queryset=Answer.objects.none())
+
+    if request.method == "POST":
+        if question_form.is_valid() and formset.is_valid():
+            question = question_form.cleaned_data['question']
+            for form in formset:
+                if form.cleaned_data and not form.cleaned_data.get('DELETE'):
+                    answer = form.save(commit=False)
+                    answer.question = question
+                    answer.save()
+
+            # 🔁 AJAX yuborilgan bo‘lsa, JSON qaytaramiz
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({
+                    "success": True,
+                    "redirect_url": reverse("answer_list")
+                })
+            else:
+                return redirect('answer_list')
+
+        # Agar xato bo‘lsa
+        elif request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({
+                "success": False,
+                "errors": {
+                    "question_errors": question_form.errors,
+                    "formset_errors": formset.errors
+                }
+            }, status=400)
+
+    context = {
+        "title": title,
+        "form": question_form,
+        "formset": formset,
+        "segment": "answers"
+    }
+    return render(request, "home/user/answers/answer_dynamic_form.html", context)

@@ -70,7 +70,6 @@ class TeacherForm(forms.ModelForm):
         }
 
 
-
 class StudyModuleForm(forms.ModelForm):
     class Meta:
         model = StudyModule
@@ -80,6 +79,7 @@ class StudyModuleForm(forms.ModelForm):
             "study_field": forms.Select(attrs={"class": "form-control"}),
             "filial": forms.Select(attrs={"class": "form-control"}),
         }
+        
         
 class StudyModuleUploadForm(forms.Form):
     filial = forms.ModelChoiceField(
@@ -94,12 +94,21 @@ class StudyModuleUploadForm(forms.Form):
         widget=forms.FileInput(attrs={"class": "form-control"})
     )
 
+
 class AssignTeacherForm(forms.ModelForm):
     class Meta:
         model = GroupModuleTeacher
         fields = ["teacher"]
         widgets = {
             "teacher": forms.Select(attrs={"class": "form-control"}),
+        }
+        
+class GroupModuleTeacherActiveForm(forms.ModelForm):
+    class Meta:
+        model = GroupModuleTeacher
+        fields = ["active"]
+        widgets = {
+            "active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
         
 

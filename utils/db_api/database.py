@@ -1,347 +1,230 @@
-from datetime import date, datetime
-from typing import List, Any
+from datetime import datetime, timedelta
 from asgiref.sync import sync_to_async
+from django.db.models import F
 from apps.main.models import *
-from apps.superadmin.models import *
-from django.db.models import F, ExpressionWrapper, DurationField
-from datetime import timedelta
+from apps.forms.models import *
+
+
+# ======== USER FUNKSIYALARI =========
+@sync_to_async
+def check_user(user_id):
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    return user.finish if user else False
 
 
 @sync_to_async
-def get_employee(user_id):
-    try:
-        user = Employee.objects.filter(user_id=user_id).first()
-        return user
-    except:
-        return None
+def add_user(user_id, username, first_name, lang):
+    current_date = datetime.now()
+    formatted_date = current_date.strftime("%Y %B")
+    user, created = TelegramUser.objects.get_or_create(telegram_id=user_id)
+    user.lang = lang
+    user.username = username
+    user.first_name = first_name
+    user.study_period = formatted_date
+    user.save()
+    return user
 
 
 @sync_to_async
-def add_employee(user_id, full_name, admin_id):
-    # try:
-    Employee.objects.create(user_id=user_id, name=full_name).save()
-    admin = Administrator.objects.filter(telegram_id=admin_id).first()
-    emp = Employee.objects.filter(user_id=user_id).first()
-    emp.filial = admin.filial
-    emp.save()
-    return emp
-    # except Exception as exx:
-    #     print(exx)
-    #     return None
+def get_user(user_id):
+    return TelegramUser.objects.filter(telegram_id=user_id).first()
+
 
 @sync_to_async
-def get_telegram_user(user_id: int) -> TelegramUser:
-    try:
-        return TelegramUser.objects.get(user_id=user_id)
-    except TelegramUser.DoesNotExist:
-        return None
-
-@sync_to_async
-def add_telegram_user(user_id, username, first_name, last_name):
-    try:
-        user = TelegramUser.objects.create(
-            user_id=user_id,
-            username=username,
-            first_name=first_name,
-            last_name=last_name
-        )
-        return user
-    except Exception as exx:
-        print(exx)
-        return None
+def get_lang(user_id):
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    return user.lang if user else None
 
 
+# ======== FILIAL / YO‘NALISH / GURUH TANLASH FUNKSIYALARI =========
 @sync_to_async
 def get_all_filials():
+    """Barcha filiallar ro‘yxatini qaytaradi."""
     return list(Filial.objects.all())
-    
-    
-@sync_to_async
-def get_employees() -> List[Employee]:
-    eps = Employee.objects.all()
-    return eps
 
 
 @sync_to_async
-def get_employees() -> List[Employee]:
-    eps = Employee.objects.all()
-    return eps
+def get_study_fields_by_filial(filial_id):
+    """Filial bo‘yicha yo‘nalishlarni qaytaradi."""
+    # Agar StudyField Filial bilan bog‘liq bo‘lsa — kerakli filterni qo‘ying.
+    return list(StudyField.objects.all())
 
 
 @sync_to_async
-def is_user_employee(user_id: int) -> bool:
-    return Employee.objects.filter(user_id=user_id).exists()
+def get_current_month_groups(filial_id=None, study_field_id=None):
+    """Hozirgi oy uchun guruhlarni qaytaradi."""
+    now = datetime.now()
+    groups = Group.objects.filter(
+        year__year=now.year,
+        month__number=now.month
+    )
+    if filial_id:
+        groups = groups.filter(filial_id=filial_id)
+    if study_field_id:
+        groups = groups.filter(study_field_id=study_field_id)
+    return list(groups)
 
 
 @sync_to_async
-def is_user_admin(user_id: int) -> bool:
-    return Administrator.objects.filter(telegram_id=user_id).exists()
+def set_filial(filial_name, user_id):
+    """Foydalanuvchiga filialni biriktiradi."""
+    filial = Filial.objects.filter(name_uz=filial_name).first() or \
+             Filial.objects.filter(name_ru=filial_name).first()
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user and filial:
+        user.filial = filial
+        user.save()
 
 
 @sync_to_async
-def get_admins_by_filial(filial_id: int):
-    return list(Administrator.objects.filter(filial_id=filial_id))
+def set_study_field(name, user_id):
+    """Foydalanuvchiga tanlangan yo‘nalishni biriktiradi."""
+    field = StudyField.objects.filter(study_field_uz=name).first() or \
+            StudyField.objects.filter(study_field_ru=name).first()
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user and field:
+        user.field_of_study = field
+        user.save()
+    return field
 
 
 @sync_to_async
-def get_all_admin_ids() -> list[int]:
-    user_ids = list(Administrator.objects.values_list('telegram_id', flat=True))
-    print(user_ids)
-    return user_ids
+def set_group(group_name, user_id):
+    """Foydalanuvchiga tanlangan guruhni biriktiradi."""
+    group = Group.objects.filter(name_uz=group_name).first() or \
+            Group.objects.filter(name_ru=group_name).first()
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user and group:
+        user.group = group
+        user.save()
+
+
+# ======== SAVOL / JAVOB FUNKSIYALARI =========
+@sync_to_async
+def get_question(index):
+    questions = Question.objects.filter(active=True).order_by('id')
+    return questions[int(index)] if 0 <= int(index) < len(questions) else None
 
 
 @sync_to_async
-def get_all_addresses()-> list[str]:
-    return list(Location.objects.filter(name__isnull=False).values_list("name", flat=True))
+def get_multi_or_not(index):
+    question = get_question(index)
+    return question.multi_answer if question else False
 
 
 @sync_to_async
-def get_filial_location(user_id):
-    admin = Administrator.objects.filter(telegram_id=user_id).first()
-    return Location.objects.filter(filial = admin.filial).last()
+def get_answers(question_id):
+    return list(Answer.objects.filter(question_id=question_id))
 
 
 @sync_to_async
-def save_location(name, lat, lon, user_id):
+def update_answer(answer_id, user_id, question_id):
     try:
-        admin = Administrator.objects.get(telegram_id=user_id)
-        location = Location.objects.filter(filial=admin.filial).first()
-        if location:
-            # Mavjud locationni yangilaymiz
-            location.name = name
-            location.latitude = lat
-            location.longitude = lon
-            location.save()
+        answer = Answer.objects.get(id=answer_id)
+        answer.answers_count = F('answers_count') + 1
+        answer.save(update_fields=['answers_count'])
+        user = TelegramUser.objects.get(telegram_id=user_id)
+        question = Question.objects.get(id=question_id)
+
+        user_answer, _ = UserAnswer.objects.get_or_create(user=user, question=question)
+        if answer in user_answer.answer.all():
+            user_answer.answer.remove(answer)
         else:
-            # Yangi location yaratamiz
-            Location.objects.create(
-                filial=admin.filial,
-                name=name,
-                latitude=lat,
-                longitude=lon
-            )    
+            user_answer.answer.add(answer)
     except Exception as exx:
-        print(exx)
+        print("update_answer xatosi:", exx)
+
+
+@sync_to_async
+def finish_user(user_id):
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user:
+        user.finish = True
+        user.save()
+    return user
+
+
+# ======== LOCATION / COMMENT FUNKSIYALARI =========
+@sync_to_async
+def set_location(loc_name, user_id):
+    location = Location.objects.filter(location_uz=loc_name).first() or \
+               Location.objects.filter(location_ru=loc_name).first()
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user and location:
+        user.location = location
+        user.save()
+
+
+@sync_to_async
+def set_comment_1(user_id, comment):
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user:
+        user.comment_1 = comment
+        user.save()
+
+
+@sync_to_async
+def set_comment_2(user_id, comment):
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    if user:
+        user.comment_2 = comment
+        user.save()
+
+
+@sync_to_async
+def get_filial_from_db(user_id: int):
+    """
+    Foydalanuvchiga tegishli filial(lar)ni qaytaradi.
+    Agar foydalanuvchining filial bog‘lanmagan bo‘lsa, bo‘sh ro‘yxat qaytaradi.
+    """
+    try:
+        user = TelegramUser.objects.filter(telegram_id=user_id).select_related("filial").first()
+        if user and user.filial:
+            return user.filial
+        return []
+    except Exception as ex:
+        print(f"❌ Filialni olishda xatolik: {ex}")
+        return []
+
+    
+@sync_to_async
+def create_student(user_id, group_id):
+    """Foydalanuvchini Student sifatida yaratadi."""
+    try:
+        user = TelegramUser.objects.filter(telegram_id=user_id).first()
+        group = Group.objects.filter(id=group_id).first()
+        if user and group:
+            student, created = Student.objects.get_or_create(telegram_user=user, group=group)
+            return student
+        return None
+    except Exception as ex:
+        print(f"❌ Student yaratishda xatolik: {ex}")
         return None
     
-    
-        
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
-
-async def get_location_name(lat, lon):
-    geolocator = Nominatim(user_agent="myuzbot (jigar@t.me)")
-    try:
-        location = geolocator.reverse((lat, lon), timeout=10)
-        return location.address if location else "Nomaʼlum manzil"
-    except GeocoderTimedOut:
-        return "Geocoding vaqti tugadi"
-    
 
 @sync_to_async
-def create_employee_if_not_exists(user_id, full_name):
-    if not Employee.objects.filter(user_id=user_id).exists():
-        Employee.objects.create(user_id=user_id, full_name=full_name)
-        
-
-@sync_to_async
-def get_all_weekdays():
-    return list(Weekday.objects.all())
-
-
-@sync_to_async
-def save_work_schedule(user_id, data):
-    admin = Administrator.objects.filter(telegram_id=user_id).first()
-
-    employee = Employee.objects.filter(user_id=data["employee_id"]).first()
-    if not employee:
-        raise Exception("Foydalanuvchi topilmadi!")
+def get_active_modules(group_id):
+    """Berilgan guruh uchun faqat active modullarni qaytaradi"""
     
-    weekdays = Weekday.objects.filter(name__in=data["selected_weekdays"])
-    ws = WorkSchedule.objects.create(
-        employee=employee,
-        start=data["start"],
-        end=data["end"],
-        admin=admin
+    return list(
+        GroupModuleTeacher.objects.select_related("study_module")
+        .filter(group_id=group_id, active=True)
     )
-    ws.weekday.set(weekdays)
     
 
 @sync_to_async
-def delete_employee_by_user_id(user_id: int) -> bool:
-    employee = Employee.objects.filter(user_id=user_id).first()
-    if employee:
-        employee.delete()
-        return True  # O'chirildi
-    return False  # Topilmadi
-
-
-@sync_to_async
-def get_employee_schedule_text(employee_id: int) -> str:
-    try:
-        emp = Employee.objects.filter(user_id=employee_id).first()
-        if not emp:
-            return "❌ Xodim topilmadi."
-
-        schedules = WorkSchedule.objects.filter(employee_id=emp.id).prefetch_related('weekday')
-        
-        if not schedules:
-            return "⚠️ Ish jadvali mavjud emas."
-
-        jadval_matni = "🗓 Sizning ish jadvalingiz:\n\n"
-        for schedule in schedules:
-            kunlar = ", ".join([w.name for w in schedule.weekday.all()])
-            vaqt = f"{schedule.start.strftime('%H:%M')} - {schedule.end.strftime('%H:%M')}"
-            jadval_matni += f"📅 {kunlar} | ⏰ {vaqt}\n"
-
-        return jadval_matni
-    except Exception as e:
-        print(f"Xatolik: {e}")
-        return "⚠️ Ish jadvali topilmadi yoki xato yuz berdi."
-
-@sync_to_async
-def get_daily_report(filial):
-    today = datetime.today().date()  # faqat sana
-
-    records = (
-        Attendance.objects.filter(employee__filial_id=filial.id, date=today)
-        .annotate(
-            worked_hours=ExpressionWrapper(
-                F("check_out") - F("check_in"),
-                output_field=DurationField()
-            )
-        )
-        .select_related("employee")
+def get_active_modules(group_id):
+    return list(
+        GroupModuleTeacher.objects.filter(group_id=group_id, active=True)
+        .select_related("study_module")
     )
 
-    lines = []
-    for rec in records:
-        worked = rec.worked_hours or timedelta()
-        hours, remainder = divmod(int(worked.total_seconds()), 3600)
-        minutes, _ = divmod(remainder, 60)
-
-        lines.append(
-            f"👤 {rec.employee.name}\n"
-            f" ⏰ Keldi: {rec.check_in.strftime('%H:%M') if rec.check_in else '-'}\n"
-            f" 🚪 Ketdi: {rec.check_out.strftime('%H:%M') if rec.check_out else '-'}\n"
-            f" ⌛ Ishlagan: {hours:02d}:{minutes:02d}"
-        )
-    if not lines:
-        return "Bugun hech kim kelmadi."
-    return "\n\n".join(lines)
-
-# @sync_to_async
-# def generate_attendance_excel_file(start_date, end_date, file_name="hisobot.xlsx"):
-#     import os
-#     import pandas as pd
-#     from datetime import datetime, timedelta
-
-#     data = []
-#     current_date = start_date
-#     while current_date <= end_date:
-#         weekday_name = current_date.strftime('%A').lower()
-#         weekday = Weekday.objects.filter(name_en__iexact=weekday_name).first()
-#         if not weekday:
-#             current_date += timedelta(days=1)
-#             continue
-
-#         schedules = WorkSchedule.objects.filter(weekday=weekday).select_related('employee')
-
-#         for schedule in schedules:
-#             emp = schedule.employee
-#             attendance = Attendance.objects.filter(employee=emp, date=current_date).first()
-#             check_in = attendance.check_in if attendance else None
-#             check_out = attendance.check_out if attendance else None
-
-#             in_diff = out_diff = None
-#             if check_in:
-#                 delta_in = datetime.combine(current_date, check_in) - datetime.combine(current_date, schedule.start)
-#                 in_diff = int(delta_in.total_seconds() // 60)
-#             if check_out:
-#                 delta_out = datetime.combine(current_date, check_out) - datetime.combine(current_date, schedule.end)
-#                 out_diff = int(delta_out.total_seconds() // 60)
-#             print(schedule.id)
-#             data.append({
-#                 "Sana": current_date.strftime("%d.%m.%Y"),
-#                 "Xodim": emp.name,
-#                 "Xafta kuni": weekday.name,
-#                 "Kutilgan kirish": schedule.start.strftime("%H:%M"),
-#                 "Amalda kirgan": check_in.strftime("%H:%M") if check_in else "-",
-#                 "Kech/erta kirish (min)": in_diff,
-#                 "Kutilgan chiqish": schedule.end.strftime("%H:%M"),
-#                 "Amalda chiqqan": check_out.strftime("%H:%M") if check_out else "-",
-#                 "Kech/erta chiqish (min)": out_diff,
-#             })
-
-#         current_date += timedelta(days=1)
-
-#     df = pd.DataFrame(data)
-
-#     dir_path = "media/reports"
-#     os.makedirs(dir_path, exist_ok=True)
-#     full_path = os.path.join(dir_path, file_name)
-
-#     with pd.ExcelWriter(full_path, engine='openpyxl') as writer:
-#         df.to_excel(writer, index=False, sheet_name="Hisobot")
-        
-#     print(full_path)
-
-#     return full_path
+@sync_to_async
+def get_form_category():
+    return FormCategory.objects.filter(active=True).first()
 
 @sync_to_async
-def generate_attendance_excel_file(user_id, start_date, end_date, file_name="hisobot.xlsx"):
-    import os
-    import pandas as pd
-    from datetime import datetime, timedelta
-    
-    
-    admin = Administrator.objects.filter(telegram_id=user_id).first()
-    data = []
-    current_date = start_date
-    while current_date <= end_date:
-        weekday_name = current_date.strftime('%A').lower()
-        weekday = Weekday.objects.filter(name_en__iexact=weekday_name).first()
-        if not weekday:
-            current_date += timedelta(days=1)
-            continue
-
-        schedules = WorkSchedule.objects.filter(weekday=weekday, employee__filial_id = admin.filial.id).all()
-
-        for schedule in schedules:
-            if not schedule.employee.created_at.date() <= current_date.date():
-                continue
-            emp = schedule.employee
-            attendance = Attendance.objects.filter(employee=emp, date=current_date).first()
-            check_in = attendance.check_in if attendance else None
-            check_out = attendance.check_out if attendance else None
-
-            in_diff = out_diff = None
-            if check_in:
-                delta_in = datetime.combine(current_date, check_in) - datetime.combine(current_date, schedule.start)
-                in_diff = int(delta_in.total_seconds() // 60)
-            if check_out:
-                delta_out = datetime.combine(current_date, check_out) - datetime.combine(current_date, schedule.end)
-                out_diff = int(delta_out.total_seconds() // 60)
-
-            data.append({
-                "Sana": current_date.strftime("%d.%m.%Y"),
-                "Xodim": emp.name,
-                "Xafta kuni": weekday.name,
-                "Kutilgan kirish": schedule.start.strftime("%H:%M"),
-                "Amalda kirgan": check_in.strftime("%H:%M") if check_in else "-",
-                "Kech/erta kirish (min)": in_diff,
-                "Kutilgan chiqish": schedule.end.strftime("%H:%M"),
-                "Amalda chiqqan": check_out.strftime("%H:%M") if check_out else "-",
-                "Kech/erta chiqish (min)": out_diff,
-            })
-
-        current_date += timedelta(days=1)
-
-    df = pd.DataFrame(data)
-
-    dir_path = "files/reports"
-    os.makedirs(dir_path, exist_ok=True)
-    full_path = os.path.join(dir_path, file_name)
-    df.to_excel(full_path, index=False)
-    print(full_path)
-    return full_path
+def get_questions(category_id):
+    return list(
+        Question.objects.filter(form_category_id=category_id, active=True).order_by("id")
+    )

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.main.models import Filial, Student
+from apps.main.models import Filial, Student, GroupModuleTeacher
 
 
 class FormCategory(models.Model):
@@ -7,7 +7,8 @@ class FormCategory(models.Model):
     name_ru = models.CharField(max_length=100)
     active = models.BooleanField(default=False, null=True)
     filial = models.ForeignKey(Filial, on_delete=models.CASCADE, related_name="form_categories")
-    for_rating = models.BooleanField(default=False, null=True)    
+    for_rating = models.BooleanField(default=False, null=True)
+    active = models.BooleanField(default=True, null=True)    
     def __str__(self):
         return self.name_uz
 
@@ -16,10 +17,12 @@ class FormCategory(models.Model):
         # boshqa barcha obyektlardagi for_rating=False qilib qo‘yiladi
         if self.for_rating:
             FormCategory.objects.exclude(pk=self.pk).update(for_rating=False)
+            FormCategory.objects.exclude(pk=self.pk).update(active=False)
         super().save(*args, **kwargs)
 
 
 class Question(models.Model):
+    form_category = models.ForeignKey(FormCategory, on_delete=models.CASCADE, related_name="questions", null=True)
     question_uz = models.TextField(max_length=3000)
     question_ru = models.TextField(max_length=3000)
     multi_answer = models.BooleanField(default=False)
@@ -44,6 +47,7 @@ class Answer(models.Model):
 class UserAnswer(models.Model):
     user = models.ForeignKey(Student, on_delete=models.CASCADE)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    module = models.ForeignKey(GroupModuleTeacher, on_delete=models.CASCADE, null=True)
     answer = models.ManyToManyField(Answer, null=True)
     text_answer = models.TextField(max_length=3000, null=True, blank=True)
 

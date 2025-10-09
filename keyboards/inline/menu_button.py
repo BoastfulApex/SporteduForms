@@ -1,69 +1,112 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
-from utils.db_api.database import get_all_addresses
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from apps.main.models import Filial, Location, StudyField, Group
 
 
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
-
-async def start_webapp_menu():
-    keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [
-                KeyboardButton(
-                    text="🖥 Saytga kirish",
-                    web_app=WebAppInfo(url="https://0842590a03a9.ngrok-free.app/web_app/")  # bu yerga saytingiz manzilini yozing
-                )
-            ]
-        ],
-        resize_keyboard=True
-    )
+def lang_keyboard():
+    """Til tanlash"""
+    key1 = KeyboardButton(text=f"🇺🇿 O'zbek tili")
+    key2 = KeyboardButton(text=f"🇷🇺 Русский язык")
+    keyboard = ReplyKeyboardMarkup(keyboard=[[key1, key2]], resize_keyboard=True)
     return keyboard
 
 
-async def admin_menu_keyboard():
-    admin_menu_keyboard = ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="🧑‍💼 Xodim qo'shish")],
-            [KeyboardButton(text="📊 Hisobotlar")],
-            [KeyboardButton(text="📍 Manzillar")]
-        ],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-    return admin_menu_keyboard
+def filial_keyboard(lang):
+    """Filial tanlash"""
+    filials = Filial.objects.all()
+    keyboards = []
+    for f in filials:
+        text = f.name_uz if lang == "uz" else f.name_ru
+        keyboards.append([KeyboardButton(text=text)])
+    keyboard = ReplyKeyboardMarkup(keyboard=keyboards, resize_keyboard=True)
+    return keyboard
 
 
-cancel = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text="🔙 Bekor qilish")]
-    ],
-    resize_keyboard=True,
-    one_time_keyboard=True
-)
+def study_field_keyboard(lang):
+    """Ta'lim yo‘nalishini tanlash"""
+    fields = StudyField.objects.all()
+    keyboards = []
+    for i in fields:
+        text = i.study_field_uz if lang == "uz" else i.study_field_ru
+        keyboards.append([KeyboardButton(text=text)])
+    keyboard = ReplyKeyboardMarkup(keyboard=keyboards, resize_keyboard=True)
+    return keyboard
 
 
-async def addresses_keyboard(addresses):
-    keyboard = [[KeyboardButton(text=address)] for address in addresses]
-
-    # Qo‘shimcha tugmalar (eng pastki qatorda 2 ta)
-    keyboard.append([
-        KeyboardButton(text="✏️ Manzilni yangilash"),
-        KeyboardButton(text="🔙 Bekor qilish")
-    ])
-
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-
-
-def address_bottom_keyboard():
-    keyboard = [
-        [KeyboardButton(text="✏️ Manzilni yangilash")],
-        [KeyboardButton(text="🔙 Bekor qilish")]
-    ]
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+def group_keyboard(lang, study_field=None, filial=None):
+    """Guruhni tanlash — faqat tanlangan filial va yo‘nalish bo‘yicha"""
+    groups = Group.objects.all()
+    if study_field:
+        groups = groups.filter(study_field=study_field)
+    if filial:
+        groups = groups.filter(filial=filial)
+    
+    keyboards = []
+    for g in groups:
+        text = g.name_uz if lang == "uz" else g.name_ru
+        keyboards.append([KeyboardButton(text=text)])
+    keyboard = ReplyKeyboardMarkup(keyboard=keyboards, resize_keyboard=True)
+    return keyboard
 
 
-def empty_address_keyboard():
-    keyboard = [
-        [KeyboardButton(text="➕ Manzil qo‘shish")],
-        [KeyboardButton(text="🔙 Bekor qilish")]
-    ]
-    return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
+async def location_keyboard(lang):
+    """Manzil (location) tanlash"""
+    stm_all = Location.objects.all()
+    keyboards = []
+    for i in stm_all:
+        text = i.location_uz if lang == "uz" else i.location_ru
+        keyboards.append([KeyboardButton(text=text)])
+    keyboard = ReplyKeyboardMarkup(keyboard=keyboards, resize_keyboard=True)
+    return keyboard
+
+
+async def phone_keyboard(lang):
+    """Telefon raqam ulashish"""
+    texts = {
+        "uz": ["Raqamni ulashish", "Ortga"],
+        "ru": ["Поделиться номером", "Назад"],
+    }[lang]
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    key1 = KeyboardButton(text=f"📞 {texts[0]}", request_contact=True)
+    key2 = KeyboardButton(text=f"⬅️️ {texts[1]}")
+    keyboard.add(key1)
+    keyboard.add(key2)
+    return keyboard
+
+
+async def user_menu(lang):
+    """Foydalanuvchi asosiy menyusi"""
+    texts = {
+        "uz": ["Oila kursi haqida", "Fikr qoldirish"],
+        "ru": ["О курсе", "Оставить отзыв"],
+    }[lang]
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    key1 = KeyboardButton(text=f"📚 {texts[0]}")
+    key2 = KeyboardButton(text=f"✍️ {texts[1]}")
+    keyboard.add(key1, key2)
+    return keyboard
+
+
+def back_keyboard(lang):
+    """Orqaga tugmasi"""
+    text = "⬅️️ Orqaga" if lang == "uz" else "⬅️️ Назад"
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add(KeyboardButton(text=text))
+    return keyboard
+
+
+def rating_keyboard():
+    """Ovoz berish"""
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add(KeyboardButton(text="📊 Ovoz berish"))
+    return keyboard
+
+
+async def group_keyboard(lang, groups):
+    """Joriy oydagi guruhlar uchun keyboard"""
+    keyboards = []
+    print(groups)
+    for g in groups:
+        text = g.name_uz if lang == "uz" else g.name_ru
+        keyboards.append([KeyboardButton(text=text)])
+
+    return ReplyKeyboardMarkup(keyboard=keyboards, resize_keyboard=True)

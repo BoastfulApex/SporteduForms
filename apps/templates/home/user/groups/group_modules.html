@@ -26,6 +26,7 @@
                             <tr>
                                 <th></th>
                                 <th>Modul</th>
+                                <th>Holati</th>
                                 <th>O‘qituvchi</th>
                             </tr>
                         </thead>
@@ -34,6 +35,17 @@
                             <tr>
                                 <td></td>
                                 <td>{{ gm.study_module.name }}</td>
+                                <td class="">
+                                    {% if gm.active %}
+                                        <a href="{% url 'group_module_active' gm.id %}" class="btn btn-sm btn-success">
+                                            <i data-feather="check-circle"></i> Faol
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'group_module_active' gm.id %}" class="btn btn-sm btn-outline-secondary">
+                                            <i data-feather="x-circle"></i> Nofaol
+                                        </a>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if gm.teacher %}
                                         <a href="{% url 'assign_teacher' gm.id %}">{{ gm.teacher.name }}</a>

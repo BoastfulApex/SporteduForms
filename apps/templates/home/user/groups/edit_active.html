@@ -1,0 +1,30 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Guruh modullari {% endblock %}
+
+{% block body_class %} dashboard {% endblock body_class %}
+
+{% block stylesheets %}
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<main class="content">
+    <div class="container mt-4">
+        <h3>{{ instance.group.name_uz }} {{ instance.group.month.name }} {{ instance.group.year.year }} — {{ instance.study_module }}</h3>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-check">
+            {{ form.active }}
+            <label class="form-check-label">Faol holat</label>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Saqlash</button>
+        </form>
+    </div>
+</main>
+{% endblock content %}
+
+{% block javascripts %}
+<script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}

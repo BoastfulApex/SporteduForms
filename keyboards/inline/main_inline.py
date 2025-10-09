@@ -2,53 +2,129 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from apps.main.models import *
 from utils.db_api.database import *
 from data.config import URL
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-async def go_web_app():
-    print(URL)
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(
-                text="Kirish",
-                web_app=WebAppInfo(url=URL))]
-        ]
-    )
-    return keyboard
+# def answers_keyboard(question_id, lang, user_id=None):
+#     builder = InlineKeyboardBuilder()
+#     answers = Answer.objects.filter(question_id=question_id).all()
+#     question = Question.objects.get(id=question_id)
+
+#     if not question.multi_answer:
+#         # Multi-answer emas
+#         for answer in answers:
+#             if lang == 'uz':
+#                 builder.row(
+#                     InlineKeyboardButton(text=answer.answer_uz, callback_data=str(answer.id))
+#                 )
+#             else:
+#                 builder.row(
+#                     InlineKeyboardButton(text=answer.answer_ru, callback_data=str(answer.id))
+#                 )
+#     else:
+#         # Multi-answer bo‘lsa
+#         user = TelegramUser.objects.filter(telegram_id=user_id).first()
+#         user_answer, created = UserAnswer.objects.get_or_create(
+#             user=user,
+#             question=question
+#         )
+#         user_answer.save()
+
+#         go_text = "Перейти к следующему вопросу ➡️"
+#         for answer in answers:
+#             text = answer.answer_ru
+#             if lang == 'uz':
+#                 text = answer.answer_uz
+#                 back_text = "⬅️️ Orqaga"
+#                 go_text = "Keyingi savolga o'tish ➡️"
+
+#             if answer in user_answer.answer.all():
+#                 text = f'✅ {text}'
+#             builder.row(
+#                 InlineKeyboardButton(text=text, callback_data=str(answer.id))
+#             )
+
+#         builder.row(
+#             InlineKeyboardButton(text=go_text, callback_data='go_next')
+#         )
+
+#     back_text = "⬅️️ Назад"
+#     if lang == 'uz':
+#         back_text = "⬅️️ Orqaga"
+
+#     builder.row(
+#         InlineKeyboardButton(text=back_text, callback_data='go_back')
+#     )
+
+#     # Tayyor markupni qaytarish
+#     return builder.as_markup()
 
 
-def generate_weekday_keyboard(selected_ids: set[int]) -> InlineKeyboardMarkup:
-    keyboard = []
+def answers_keyboard(question_id, lang, user_id=None):
+    builder = InlineKeyboardBuilder()
+    answers = Answer.objects.filter(question_id=question_id)
+    question = Question.objects.get(id=question_id)
 
-    for weekday in ["Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba", "Yakshanba"]:
-        # Weekday obyektini olish
-        button_text = f"✅ {weekday}" if weekday in selected_ids else weekday
-        callback_data = f"select_weekday:{weekday}"
-        keyboard.append([InlineKeyboardButton(text=button_text, callback_data=callback_data)])
+    # Text-answer bo‘lsa, variantlar chiqmaydi
+    if question.text_answer:
+        return None
 
-    # Pastki tugmalar: Davom etish va Orqaga
-    keyboard.append([
-        InlineKeyboardButton(text="⬅️ Orqaga", callback_data="back_to_start"),
-        InlineKeyboardButton(text="⏭ Davom etish", callback_data="continue_schedule")
-    ])
+    for answer in answers:
+        text = answer.answer_uz if lang == "uz" else answer.answer_ru
+        builder.row(InlineKeyboardButton(text=text, callback_data=str(answer.id)))
 
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+    return builder.as_markup()
 
 
-def get_user_approval_keyboard(user_id: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="✅ Tasdiqlash", callback_data=f"approve_user:{user_id}"),
-            InlineKeyboardButton(text="❌ Rad etish", callback_data=f"reject_user:{user_id}")
-        ]
-    ])
-    
-async def get_filial_selection_keyboard() -> InlineKeyboardMarkup:
-    filiallar = await get_all_filials()
+async def inline_group_keyboard(lang, groups):
+    """Guruhlarni inline keyboard sifatida chiqarish"""
+    buttons = []
 
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=filial.filial_name, callback_data=f"filial_{filial.id}")]
-            for filial in filiallar
-        ]
-    )
+    for g in groups:
+        text = g.name_uz if lang == "uz" else g.name_ru
+        # callback_data orqali guruh ID yuboriladi
+        buttons.append([InlineKeyboardButton(text=text, callback_data=f"group_{g.id}")])
+
+    # Orqaga tugmasi
+    back_text = "◀️ Orqaga" if lang == "uz" else "◀️ Назад"
+    buttons.append([InlineKeyboardButton(text=back_text, callback_data="back_to_study_field")])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+async def inline_module_keyboard(lang, modules):
+    buttons = [
+        [InlineKeyboardButton(
+            text=m.study_module.name,
+            callback_data=f"module_{m.study_module.id}"
+        )]
+        for m in modules
+    ]
+    back_text = "◀️ Orqaga" if lang == "uz" else "◀️ Назад"
+    buttons.append([InlineKeyboardButton(text=back_text, callback_data="back_to_group")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+def modules_keyboard(group_id: int, lang: str) -> InlineKeyboardMarkup:
+    modules = GroupModuleTeacher.objects.filter(group_id=group_id, active=True)
+
+    keyboard = InlineKeyboardMarkup(row_width=1)
+
+    if not modules.exists():
+        text = "📭 Hozircha hech qanday modul mavjud emas." if lang == "uz" else "📭 Пока нет доступных модулей."
+        keyboard.add(InlineKeyboardButton(text=text, callback_data="no_modules"))
+        return keyboard
+
+    # 🔹 Har bir modul uchun tugma
+    for m in modules:
+        module_name = (
+            m.study_module.name_uz if lang == "uz" else m.study_module.name_ru
+        )
+        callback_data = f"module_{m.id}"
+        keyboard.add(InlineKeyboardButton(text=f"📘 {module_name}", callback_data=callback_data))
+
+    # 🔹 Orqaga qaytish tugmasi
+    back_text = "⬅️ Guruhlar ro‘yxatiga qaytish" if lang == "uz" else "⬅️ Вернуться к списку групп"
+    keyboard.add(InlineKeyboardButton(text=back_text, callback_data="back_to_groups"))
+
     return keyboard

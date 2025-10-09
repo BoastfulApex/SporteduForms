@@ -60,13 +60,13 @@
                 </td>
               </tr>
               {% empty %}
-            <a class="btn btn-outline-success" href="{% url 'question_create' %}">
-              <i class="fas fa-plus"></i> Qo'shish
-            </a>
               <tr>
                 <td colspan="7" class="text-center text-muted">Savollar topilmadi</td>
               </tr>
               {% endfor %}
+              <a class="btn btn-outline-success" href="{% url 'question_create' %}">
+                <i class="fas fa-plus"></i> Qo'shish
+              </a>
             </tbody>
           </table>
         </div>

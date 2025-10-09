@@ -1,5 +1,7 @@
 from django import forms
 from .models import *
+from django.forms import modelformset_factory
+
 
 class FormCategoryForm(forms.ModelForm):
     class Meta:
@@ -41,6 +43,11 @@ class QuestionForm(forms.ModelForm):
         label="Faol holatda",
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"})
     )
+    form_category = forms.ModelChoiceField(
+        queryset=FormCategory.objects.all(),
+        label="So'rovnoma kategoryasi",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
 
     class Meta:
         model = Question
@@ -69,3 +76,31 @@ class AnswerForm(forms.ModelForm):
                 'placeholder': 'Javoblar soni'
             }),
         }
+
+
+
+class AddAnswerForm(forms.ModelForm):
+    class Meta:
+        model = Answer
+        fields = ['answer_uz', 'answer_ru', 'score']
+        widgets = {
+            'answer_uz': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Javob (UZ)'}),
+            'answer_ru': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Javob (RU)'}),
+            'score': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ball'}),
+        }
+
+
+AddAnswerFormSet = modelformset_factory(
+    Answer,
+    form=AddAnswerForm,
+    extra=1,
+    can_delete=True
+)
+
+
+class QuestionSelectForm(forms.Form):
+    question = forms.ModelChoiceField(
+        queryset=Question.objects.filter(active=True),
+        label="Savolni tanlang",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )

@@ -17,6 +17,8 @@ urlpatterns = [
     path("modules/upload/", views.study_module_upload, name="study_module_upload"),
     path("groups/<int:group_id>/modules/", views.group_modules, name="group_modules"),
     path("groups/<int:group_module_id>/assign-teacher/", views.assign_teacher, name="assign_teacher"),
+    path('group-module/<int:pk>/toggle/', views.toggle_group_module_teacher_active, name='group_module_active'),
+
     path('form-categories/', views.form_category_list, name='form_category_list'),
     path('form-categories/create/', views.form_category_create, name='form_category_create'),
     path('form-categories/<int:pk>/edit/', views.form_category_update, name='form_category_update'),
@@ -26,10 +28,11 @@ urlpatterns = [
     path("questions/<int:pk>/edit/", views.question_update, name="question_edit"),
     path("questions/<int:pk>/delete/", views.question_delete, name="question_delete"),
     path("answers/", views.answer_list, name="answer_list"),
-    path("answers/create/", views.answer_create, name="answer_create"),
+    path("answers/create/", views.add_answer_view, name="answer_create"),
     path("answers/<int:pk>/edit/", views.answer_edit, name="answer_edit"),
     path("answers/<int:pk>/delete/", views.answer_delete, name="answer_delete"),
-    
+    path('answers/manage/', views.add_answer_view, name='add_answers'),
+
     # path('administrators_create/', views.admin_create, name='administrators_create'),
     # path('administrators/<int:pk>', views.admin_detail, name='admin_update'),
     # path('admin_delete/<int:pk>', views.AdminDelete.as_view(), name='admin_delete'),
