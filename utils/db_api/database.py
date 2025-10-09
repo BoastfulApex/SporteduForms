@@ -223,8 +223,15 @@ def get_active_modules(group_id):
 def get_form_category():
     return FormCategory.objects.filter(active=True).first()
 
+
 @sync_to_async
 def get_questions(category_id):
     return list(
         Question.objects.filter(form_category_id=category_id, active=True).order_by("id")
     )
+    
+
+@sync_to_async
+def get_user_study_field(user_id):
+    user = TelegramUser.objects.filter(telegram_id=user_id).first()
+    return user.field_of_study if user else None

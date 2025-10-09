@@ -237,7 +237,7 @@ async def get_group_func(callback: CallbackQuery, state: FSMContext):
 async def get_module_func(call: CallbackQuery, state: FSMContext):
     lang = await get_lang(call.from_user.id)
     data = call.data
-
+    print(data)
     if data.startswith("module_"):
         module_id = int(data.split("_")[1])
         await state.update_data(module_id=module_id)
@@ -300,11 +300,48 @@ async def get_module_func(call: CallbackQuery, state: FSMContext):
             await call.message.answer(text=text, reply_markup=keyboard, parse_mode="HTML")
             await state.set_state(Form.question)
             await state.update_data(question_id=first_question.id)                   
-                
+    elif data == "back_to_group":
+        study_field = await get_user_study_field(call.from_user.id)
+        await call.message.delete()
+        filial = await get_filial_from_db(call.from_user.id)
+
+        now = datetime.now()
+        current_month = now.month
+        current_year = now.year
+
+        # Guruhlarni topish (modelingizdagi sana maydoni bo‘yicha to‘g‘rilang)
+        groups = Group.objects.filter(
+            filial=filial,
+            study_field=study_field,
+            month__month=current_month,
+            year__year=current_year
+        )
+        if not groups.exists():
+            text = (
+                "Bu yo‘nalishda joriy oydagi guruhlar topilmadi."
+                if lang == "uz"
+                else "Нет групп для этого направления в текущем месяце."
+            )
+            await call.answer(text=text)
+            return
+        else:
+            text = "Guruhingizni tanlang:" if lang == "uz" else "Выберите свою группу:"
+            await call.answer(
+                text=text,
+                reply_markup=ReplyKeyboardRemove()
+            )
+
+        # Inline keyboard yaratish
+        keyboard = await inline_group_keyboard(lang=lang, groups=groups)
+        print("keyboard")
+        text = "Guruhlar" if lang == "uz" else "Группы"
+        await call.message.answer(text=text, reply_markup=keyboard)
+        await state.set_state(Form.get_group)
+        
+
                 
 @router.callback_query(StateFilter(Form.question))
 async def questions(call: types.CallbackQuery, state: FSMContext):
-    print('AAAA')
     lang = await get_lang(call.from_user.id)
     data = await state.get_data()
 
@@ -349,17 +386,22 @@ async def questions(call: types.CallbackQuery, state: FSMContext):
             else "✅ Вы завершили ответы на вопросы по этому модулю.\n\n"
                  "⬅️ Перейдите к списку модулей по кнопке ниже."
         )
+        active_modules = await get_active_modules(group_id)
 
-        # 🔹 Modullar ro‘yxatiga qaytish uchun keyboard
-        keyboard = modules_keyboard(group_id=group_id, lang=lang)
+        if not active_modules:
+            text = "Bu guruh uchun faol modullar topilmadi." if lang == "uz" else "Нет активных модулей для этой группы."
+            await call.message.answer(text=text)
+            await call.message.answer(
+                text = "Qaysi yo'nalishda ta'lim olyapsiz?" if lang == 'uz' else "На каком направлении вы обучаетесь?",
+                reply_markup=study_field_keyboard(lang)
+            )            
+            return
 
-        await bot.send_message(
-            chat_id=call.from_user.id,
-            text=finish_text,
-            reply_markup=keyboard,
-            parse_mode="HTML"
-        )
-
+        # Modul tanlash uchun inline keyboard
+        keyboard = await inline_module_keyboard(lang, active_modules)
+        text = "Faningizni tanlang:" if lang == "uz" else "Выберите свой модуль:"
+        await call.message.answer(text=finish_text, reply_markup=keyboard)
+        await state.update_data(index=0)  # index ni 0 ga qaytarish
         await state.set_state(Form.get_module)
         return
 
@@ -425,7 +467,6 @@ async def text_answer_handler(message: Message, state: FSMContext):
     await state.update_data(index=index)
 
     if index >= len(questions):
-        # 🔚 Barcha savollar yakunlandi
         finish_text = (
             "✅ Siz ushbu modul bo‘yicha savollarga javob berishni tugatdingiz.\n\n"
             "⬅️ Quyidagi tugma orqali modullar ro‘yxatiga qayting."
@@ -433,11 +474,23 @@ async def text_answer_handler(message: Message, state: FSMContext):
             else "✅ Вы завершили ответы на вопросы по этому модулю.\n\n"
                  "⬅️ Перейдите к списку модулей по кнопке ниже."
         )
+        active_modules = await get_active_modules(group_id)
 
-        keyboard = modules_keyboard(group_id=group_id, lang=lang)
+        if not active_modules:
+            text = "Bu guruh uchun faol modullar topilmadi." if lang == "uz" else "Нет активных модулей для этой группы."
+            await message.answer(text=text)
+            await message.answer(
+                text = "Qaysi yo'nalishda ta'lim olyapsiz?" if lang == 'uz' else "На каком направлении вы обучаетесь?",
+                reply_markup=study_field_keyboard(lang)
+            )            
+            return
 
-        await message.answer(finish_text, reply_markup=keyboard, parse_mode="HTML")
-        await state.clear()
+        # Modul tanlash uchun inline keyboard
+        keyboard = await inline_module_keyboard(lang, active_modules)
+        text = "Faningizni tanlang:" if lang == "uz" else "Выберите свой модуль:"
+        await message.answer(text=finish_text, reply_markup=keyboard)
+        await state.update_data(index=0)  # index ni 0 ga qaytarish
+        await state.set_state(Form.get_module)
         return
 
     # 🔹 Keyingi savolni yuboramiz
