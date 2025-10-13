@@ -212,6 +212,7 @@ async def get_group_func(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer(text=text)
             await state.clear()
             await state.set_state(Form.get_study_field)
+            return
 
 
         # Faol modullarni olish
