@@ -224,6 +224,7 @@ async def get_group_func(callback: CallbackQuery, state: FSMContext):
                 text = "Qaysi yo'nalishda ta'lim olyapsiz?" if lang == 'uz' else "На каком направлении вы обучаетесь?",
                 reply_markup=study_field_keyboard(lang)
             )            
+            await state.set_state(Form.get_study_field)
             return
 
         # Modul tanlash uchun inline keyboard
