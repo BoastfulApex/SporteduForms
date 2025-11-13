@@ -53,6 +53,6 @@ class UserAnswer(models.Model):
 
 
     def __str__(self):
-        return f'{self.user.telegram_id} - {self.question.question_uz}'
+        return f'{self.user.id} - {self.question.question_uz}'
 
 

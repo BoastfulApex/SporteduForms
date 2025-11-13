@@ -36,5 +36,6 @@ urlpatterns = [
     # path('administrators_create/', views.admin_create, name='administrators_create'),
     # path('administrators/<int:pk>', views.admin_detail, name='admin_update'),
     # path('admin_delete/<int:pk>', views.AdminDelete.as_view(), name='admin_delete'),
-   
+    path('schedule/create/', views.schedule_create, name='schedule_create'),
+    path('ajax/load-months/', views.ajax_load_months, name='ajax_load_months'),   
 ]

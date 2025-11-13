@@ -1,0 +1,75 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Hisobot {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1>Yil va Oy tanlash</h1>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="card card-primary">
+      <div class="card-header">
+        <h3 class="card-title">Jadval yaratish</h3>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="id_year">Yil</label>
+            {{ form.year }}
+          </div>
+          <div class="form-group">
+            <label for="id_month">Oy</label>
+            {{ form.month }}
+          </div>
+          <div class="form-group">
+            <label for="id_filial">Filial</label>
+            {{ form.filial }}
+          </div>
+          <input type="submit" class="btn btn-success float-right" value="Saqlash">
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function () {
+  $("#id_year").change(function () {
+    var yearId = $(this).val();
+    if (!yearId) return;
+    $.ajax({
+      url: "{% url 'ajax_load_months' %}",
+      data: { 'year_id': yearId },
+      success: function (data) {
+        var $month = $("#id_month");
+        $month.empty();
+        $month.append(new Option("-----", ""));
+        $.each(data, function (index, item) {
+          $month.append(new Option(item.name, item.id));
+        });
+      }
+    });
+  });
+});
+</script>
+<script src="{% static 'js/app.js' %}"></script>
+
+{% endblock javascripts %}

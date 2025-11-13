@@ -13,6 +13,7 @@ from django.contrib import messages
 from apps.forms.forms import *
 import openpyxl
 from django.urls import reverse
+from django.db.models import Sum, Max, F
 
 
 
@@ -474,3 +475,57 @@ def add_answer_view(request):
         "segment": "answers"
     }
     return render(request, "home/user/answers/answer_dynamic_form.html", context)
+
+
+def schedule_create(request):
+    if request.method == 'POST':
+        form = ScheduleForm(request.POST)
+        if form.is_valid():
+            year = form.cleaned_data['year']
+            month = form.cleaned_data['month']
+            filial = form.cleaned_data['filial']
+            # bu yerda siz ma’lumotni saqlashingiz yoki qayta ishlashingiz mumkin
+            selected_month = form.cleaned_data['month']
+
+            teachers = Teacher.objects.filter(
+                teacher_modules__group__month_id=month
+            ).distinct()   
+
+            report_data = []
+
+            for teacher in teachers:
+                teacher_modules = GroupModuleTeacher.objects.filter(teacher=teacher)
+                teacher_total_score = 0
+                teacher_max_score = 0
+                                    
+
+                for module in teacher_modules:
+                    # Shu modulga berilgan barcha javoblar
+                    user_answers = UserAnswer.objects.filter(module=module).all()
+                    for ua in user_answers:  # user_answers = UserAnswer queryset
+                        for ans in ua.answer.all():
+                            teacher_total_score += ans.score
+                            teacher_max_score += Answer.objects.filter(question=ua.question).aggregate(max_score=Max('score'))['max_score'] or 0
+                percent = round((teacher_total_score / teacher_max_score * 100), 2) if teacher_max_score else 0
+                report_data.append({
+                    'teacher': teacher.name,
+                    'total_score': teacher_total_score,
+                    'max_score': teacher_max_score,
+                    'percent': percent,
+                })
+            # Foiz bo‘yicha tartiblash
+            report_data.sort(key=lambda x: x['percent'], reverse=True)
+        return render(request, 'home/reports/teacher_report.html', {
+            'form': form,
+            'report_data': report_data,
+            'segment': 'reports'
+        })
+    else:
+        form = ScheduleForm()
+    return render(request, 'home/reports/select_date.html', {'form': form, 'segment': 'reports'})
+
+
+def ajax_load_months(request):
+    year_id = request.GET.get('year_id')
+    months = Month.objects.filter(year_id=year_id).values('id', 'name')
+    return JsonResponse(list(months), safe=False)

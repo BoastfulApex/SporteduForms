@@ -134,8 +134,8 @@ class Teacher(models.Model):
 
 class GroupModuleTeacher(models.Model):
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name="teacher_modules", null=True)
-    study_module = models.ForeignKey(StudyModule, on_delete=models.CASCADE, related_name="teacher_modules")
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="teacher_modules")
+    study_module = models.ForeignKey(StudyModule, on_delete=models.CASCADE, related_name="study_modules")
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name="group_modules")
     active = models.BooleanField(default=False, null=True)
 
     def __str__(self):

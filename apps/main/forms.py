@@ -112,7 +112,72 @@ class GroupModuleTeacherActiveForm(forms.ModelForm):
         }
         
 
-# class FilialForm(forms.ModelForm):
+class MonthSelectForm(forms.Form):
+    year = forms.ModelChoiceField(
+        queryset=Year.objects.all().order_by('-year'),
+        label="Yilni tanlang",
+        required=True
+    )
+    month = forms.ModelChoiceField(
+        queryset=Month.objects.none(),
+        label="Oyni tanlang",
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Yil tanlangan bo‘lsa, shu yilga tegishli oylar chiqsin
+        if 'year' in self.data:
+            try:
+                year_id = int(self.data.get('year'))
+                self.fields['month'].queryset = Month.objects.filter(year_id=year_id).order_by('month')
+            except (ValueError, TypeError):
+                pass
+        elif self.initial.get('year'):
+            year = self.initial.get('year')
+            self.fields['month'].queryset = Month.objects.filter(year=year).order_by('month')
+            
+
+
+class ScheduleForm(forms.Form):
+    year = forms.ModelChoiceField(
+        queryset=Year.objects.all(),
+        label="Yil",
+        widget=forms.Select(attrs={
+            "class": "form-control select2",
+            "id": "id_year",
+        })
+    )
+
+    month = forms.ModelChoiceField(
+        queryset=Month.objects.none(),
+        label="Oy",
+        widget=forms.Select(attrs={
+            "class": "form-control select2",
+            "id": "id_month",
+        })
+    )
+
+    filial = forms.ModelChoiceField(
+        queryset=Filial.objects.all(),
+        label="Filial",
+        widget=forms.Select(attrs={
+            "class": "form-control select2",
+            "id": "id_filial",
+        })
+    )
+
+    # Agar keyinchalik buttonni ham form ichida style qilish kerak bo‘lsa:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Agar form POST orqali qayta ochilsa, yil tanlanganda oylar chiqsin
+        if 'year' in self.data:
+            try:
+                year_id = int(self.data.get('year'))
+                self.fields['month'].queryset = Month.objects.filter(year_id=year_id)
+            except (ValueError, TypeError):
+                pass# class FilialForm(forms.ModelForm):
 #     filial = forms.CharField(
 #         widget=forms.TextInput(
 #             attrs={

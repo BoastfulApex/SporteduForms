@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %} Hisobot {% endblock %}
+
+<!-- Element injected in the BODY element -->
+{% block body_class %} dashboard {% endblock body_class %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}
+<link href="{% static 'css/app.css' %}" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+{% endblock stylesheets %}
+
+{% block content %}
+
+    {% if report_data %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>O‘qituvchi</th>
+                <th>To‘plagan ball</th>
+                <th>Maksimal ball</th>
+                <th>Natija (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in report_data %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ item.teacher }}</td>
+                <td>{{ item.total_score }}</td>
+                <td>{{ item.max_score }}</td>
+                <td>{{ item.percent }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% elif form.is_bound %}
+    <p>Tanlangan oy uchun ma’lumot topilmadi.</p>
+    {% endif %}
+{% endblock %}
+{% block javascripts %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{% static 'js/app.js' %}"></script>
+
+{% endblock javascripts %}
