@@ -96,7 +96,7 @@ async def inline_module_keyboard(lang, modules):
     buttons = [
         [InlineKeyboardButton(
             text=m.study_module.name,
-            callback_data=f"module_{m.study_module.id}"
+            callback_data=f"module_{m.id}"
         )]
         for m in modules
     ]

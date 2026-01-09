@@ -239,7 +239,6 @@ async def get_group_func(callback: CallbackQuery, state: FSMContext):
 async def get_module_func(call: CallbackQuery, state: FSMContext):
     lang = await get_lang(call.from_user.id)
     data = call.data
-    print(data)
     if data.startswith("module_"):
         module_id = int(data.split("_")[1])
         await state.update_data(module_id=module_id)
@@ -350,7 +349,6 @@ async def questions(call: types.CallbackQuery, state: FSMContext):
     index = int(data.get('index', 0))
     group_id = data.get('group_id')
     module_id = data.get('module_id')  # <-- modulni state dan olamiz
-
     answer_id = call.data
     form_category = FormCategory.objects.filter(active=True).first()
     questions = list(
@@ -361,12 +359,13 @@ async def questions(call: types.CallbackQuery, state: FSMContext):
     user = TelegramUser.objects.filter(telegram_id=call.from_user.id).first()
     student = Student.objects.filter(telegram_user=user, group_id=group_id).first()
     answer = Answer.objects.get(id=int(answer_id))
+    module = GroupModuleTeacher.objects.get(id=module_id)
 
     # 🟢 get_or_create ishlatyapmiz
     ua, created = UserAnswer.objects.get_or_create(
         user=student,
         question=old_question,
-        module_id=module_id,  # module_id ni ham qo‘shamiz
+        module=module,  # module_id ni ham qo‘shamiz
     )
 
     # Agar answer hali bog‘lanmagan bo‘lsa, qo‘shamiz
@@ -439,7 +438,6 @@ async def questions(call: types.CallbackQuery, state: FSMContext):
 @router.message(StateFilter(Form.text_answer))
 async def text_answer_handler(message: Message, state: FSMContext):
     data = await state.get_data()
-    print(message.text)
     lang = await get_lang(message.from_user.id)
 
     question_id = data.get("question_id")
