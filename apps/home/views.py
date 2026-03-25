@@ -336,6 +336,9 @@ def question_list(request):
     return render(request, "home/user/question/question_list.html", context)
 
 def question_sample_download(request):
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Savollar"
@@ -345,24 +348,66 @@ def question_sample_download(request):
         "Javob 2 (UZ)", "Javob 2 (RU)", "Ball 2",
         "Javob 3 (UZ)", "Javob 3 (RU)", "Ball 3",
         "Javob 4 (UZ)", "Javob 4 (RU)", "Ball 4",
+        "Matnli javob (1=ha, bo'sh=yo'q)",
     ]
-    ws.append(headers)
-    ws.append([
-        "O'qituvchi darsni qanday tushuntiradi?",
-        "Как учитель объясняет урок?",
-        "Juda yaxshi", "Очень хорошо", 5,
-        "Yaxshi", "Хорошо", 4,
-        "Qoniqarli", "Удовлетворительно", 3,
-        "Yomon", "Плохо", 1,
-    ])
-    ws.append([
-        "Dars qiziqarlimi?",
-        "Интересен ли урок?",
-        "Ha, juda qiziqarli", "Да, очень интересно", 5,
-        "Qisman", "Частично", 3,
-        "Yo'q", "Нет", 1,
-        "", "", 0,
-    ])
+    header_fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF', size=11)
+    center = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    thin = Side(style='thin', color='000000')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+        # Matnli javob ustunini sariq rang bilan ajratib ko'rsatish
+        if col == 15:
+            cell.fill = PatternFill(start_color='FFD700', end_color='FFD700', fill_type='solid')
+            cell.font = Font(bold=True, color='000000', size=11)
+
+    rows = [
+        [
+            "O'qituvchi darsni qanday tushuntiradi?",
+            "Как учитель объясняет урок?",
+            "Juda yaxshi", "Очень хорошо", 5,
+            "Yaxshi", "Хорошо", 4,
+            "Qoniqarli", "Удовлетворительно", 3,
+            "Yomon", "Плохо", 1,
+            "",
+        ],
+        [
+            "Dars qiziqarlimi?",
+            "Интересен ли урок?",
+            "Ha, juda qiziqarli", "Да, очень интересно", 5,
+            "Qisman", "Частично", 3,
+            "Yo'q", "Нет", 1,
+            "", "", 0,
+            "",
+        ],
+        [
+            "Dars haqida qo'shimcha fikringiz?",
+            "Ваши дополнительные мысли об уроке?",
+            "", "", 0, "", "", 0, "", "", 0, "", "", 0,
+            1,
+        ],
+    ]
+    even_fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
+    for r_idx, row in enumerate(rows, 2):
+        for c_idx, val in enumerate(row, 1):
+            cell = ws.cell(row=r_idx, column=c_idx, value=val)
+            cell.border = border
+            cell.alignment = Alignment(vertical='center', wrap_text=True)
+            if r_idx % 2 == 0:
+                cell.fill = even_fill
+
+    col_widths = [35, 35, 20, 20, 8, 20, 20, 8, 20, 20, 8, 20, 20, 8, 25]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+    ws.row_dimensions[1].height = 35
+    ws.freeze_panes = 'A2'
+
     response = HttpResponse(
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
@@ -382,13 +427,17 @@ def question_upload(request):
                 sheet = workbook.active
                 count = 0
                 for row in sheet.iter_rows(min_row=2, values_only=True):
-                    # Ustunlar: question_uz, question_ru, a1_uz, a1_ru, score1, a2_uz, a2_ru, score2, a3_uz, a3_ru, score3, a4_uz, a4_ru, score4
                     if not row[0]:
                         continue
+                    # 15-ustun (index 14) — matnli javob belgisi
+                    text_answer_val = row[14] if len(row) > 14 else None
+                    is_text_answer = str(text_answer_val).strip() in ('1', 'ha', 'Ha', 'HA', 'yes', 'Yes') if text_answer_val else False
+
                     question = Question.objects.create(
                         form_category=form_category,
                         question_uz=row[0] or "",
                         question_ru=row[1] or "",
+                        text_answer=is_text_answer,
                         active=True,
                     )
                     # Har bir javob (4 ta): (uz, ru, ball) -> 3 ta ustun

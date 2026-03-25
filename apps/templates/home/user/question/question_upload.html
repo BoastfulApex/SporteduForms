@@ -62,30 +62,24 @@
           </div>
           <div class="card-body">
             <p>Excel fayl quyidagi tartibda bo'lishi kerak:</p>
-            <table class="table table-bordered table-sm" style="font-size:12px;">
+            <table class="table table-bordered table-sm" style="font-size:11px;">
               <thead class="thead-dark">
                 <tr>
                   <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
                   <th>F</th><th>G</th><th>H</th><th>I</th><th>J</th>
                   <th>K</th><th>L</th><th>M</th><th>N</th>
+                  <th style="background:#FFD700;color:#000;">O</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td>Savol UZ</td>
                   <td>Savol RU</td>
-                  <td>Javob 1 UZ</td>
-                  <td>Javob 1 RU</td>
-                  <td>Ball 1</td>
-                  <td>Javob 2 UZ</td>
-                  <td>Javob 2 RU</td>
-                  <td>Ball 2</td>
-                  <td>Javob 3 UZ</td>
-                  <td>Javob 3 RU</td>
-                  <td>Ball 3</td>
-                  <td>Javob 4 UZ</td>
-                  <td>Javob 4 RU</td>
-                  <td>Ball 4</td>
+                  <td>J1 UZ</td><td>J1 RU</td><td>Ball 1</td>
+                  <td>J2 UZ</td><td>J2 RU</td><td>Ball 2</td>
+                  <td>J3 UZ</td><td>J3 RU</td><td>Ball 3</td>
+                  <td>J4 UZ</td><td>J4 RU</td><td>Ball 4</td>
+                  <td style="background:#FFF9C4;"><strong>Matnli</strong></td>
                 </tr>
               </tbody>
             </table>
@@ -93,6 +87,7 @@
               <li>1-qator sarlavha (o'tkazib yuboriladi)</li>
               <li>Har bir savol uchun 4 ta javob va ularning ballari</li>
               <li>Javob bo'sh bo'lsa o'tkazib yuboriladi</li>
+              <li><span style="color:#b8860b;font-weight:bold;">O ustun</span> — matnli javob: <code>1</code> yoki bo'sh</li>
             </ul>
             <a href="{% url 'question_sample_download' %}" class="btn btn-outline-info btn-sm mt-2">
               <i class="fas fa-download"></i> Namuna faylni yuklab olish
