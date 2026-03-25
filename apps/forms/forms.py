@@ -104,3 +104,15 @@ class QuestionSelectForm(forms.Form):
         label="Savolni tanlang",
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+
+class QuestionUploadForm(forms.Form):
+    form_category = forms.ModelChoiceField(
+        queryset=FormCategory.objects.all(),
+        label="So'rovnoma turi",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    file = forms.FileField(
+        label="Excel fayl (.xlsx)",
+        widget=forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': '.xlsx'})
+    )

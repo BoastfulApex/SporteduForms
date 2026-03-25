@@ -13,10 +13,37 @@
 <main class="content">
   <div class="container-fluid p-0">
 
-    <!-- Qidiruv -->
-    <form class="input-group mb-4" method="get">
-      <input class="form-control" type="text" name="q" value="{{ search_query }}" placeholder="Savolni qidirish...">
-      <button class="input-group-text btn btn-primary" type="submit">Izlash</button>
+    <!-- Filtr -->
+    <form method="get" class="mb-4">
+      <div class="row g-2 align-items-end">
+        <div class="col-md-4">
+          <label class="form-label mb-1">Qidirish</label>
+          <input class="form-control" type="text" name="q" value="{{ search_query }}" placeholder="Savol matnini qidirish...">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label mb-1">So'rovnoma turi</label>
+          <select name="category" class="form-control">
+            <option value="">-- Barchasi --</option>
+            {% for cat in categories %}
+              <option value="{{ cat.id }}" {% if category_id == cat.id|stringformat:"s" %}selected{% endif %}>
+                {{ cat.name_uz }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label mb-1">Holati</label>
+          <select name="active" class="form-control">
+            <option value="">-- Barchasi --</option>
+            <option value="1" {% if active_filter == "1" %}selected{% endif %}>Faol</option>
+            <option value="0" {% if active_filter == "0" %}selected{% endif %}>Faol emas</option>
+          </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+          <button type="submit" class="btn btn-primary">Filtrlash</button>
+          <a href="{% url 'question_list' %}" class="btn btn-outline-secondary">Tozalash</a>
+        </div>
+      </div>
     </form>
 
     <div class="row">
@@ -24,6 +51,14 @@
         <div class="card flex-fill">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">Savollar ro'yxati</h5>
+            <div>
+              <a href="{% url 'question_upload' %}" class="btn btn-info btn-sm me-2">
+                <i class="fas fa-upload"></i> Excel orqali yuklash
+              </a>
+              <a href="{% url 'question_create' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus"></i> Yangi savol
+              </a>
+            </div>
           </div>
 
           <table class="table table-hover my-0">
@@ -31,11 +66,11 @@
               <tr>
                 <th>#</th>
                 <th>Savol (uz)</th>
-                <th>Ko‘p javob</th>
+                <th>So’rovnoma turi</th>
+                <th>Ko’p javob</th>
                 <th>Matnli javob</th>
                 <th>Faol</th>
                 <th>Amallar</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -43,20 +78,25 @@
               <tr>
                 <td>{{ forloop.counter }}</td>
                 <td>{{ question.question_uz|truncatechars:70 }}</td>
+                <td>
+                  {% if question.form_category %}
+                    <span class="badge bg-info text-dark">{{ question.form_category.name_uz }}</span>
+                  {% else %}
+                    <span class="text-muted">—</span>
+                  {% endif %}
+                </td>
                 <td>{% if question.multi_answer %}✅{% else %}❌{% endif %}</td>
                 <td>{% if question.text_answer %}✅{% else %}❌{% endif %}</td>
                 <td>{% if question.active %}🟢{% else %}⚪{% endif %}</td>
-                <td class="d-none d-md-table-cell">
+                <td>
                     <div class="d-flex align-items-center gap-3">
                         <a href="{% url 'question_edit' question.id %}" class="text-primary" title="Tahrirlash">
                             <i class="align-middle" data-feather="edit-3"></i>
                         </a>
-                        <a href="{% url 'question_delete' question.id %}" class="text-danger" title="O‘chirish">
+                        <a href="{% url 'question_delete' question.id %}" class="text-danger" title="O’chirish">
                             <i class="align-middle" data-feather="delete"></i>
                         </a>
                     </div>
-                </td>
-                <td>
                 </td>
               </tr>
               {% empty %}
@@ -77,8 +117,8 @@
     <div class="pagination mt-3">
       <span class="step-links">
         {% if page_obj.has_previous %}
-          <a href="?q={{ search_query }}&page=1">&laquo; Boshiga</a>
-          <a href="?q={{ search_query }}&page={{ page_obj.previous_page_number }}">&lsaquo; Orqaga</a>
+          <a href="?q={{ search_query }}&category={{ category_id }}&active={{ active_filter }}&page=1">&laquo; Boshiga</a>
+          <a href="?q={{ search_query }}&category={{ category_id }}&active={{ active_filter }}&page={{ page_obj.previous_page_number }}">&lsaquo; Orqaga</a>
         {% endif %}
 
         <span class="current-page">
@@ -86,8 +126,8 @@
         </span>
 
         {% if page_obj.has_next %}
-          <a href="?q={{ search_query }}&page={{ page_obj.next_page_number }}">Keyingi &rsaquo;</a>
-          <a href="?q={{ search_query }}&page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
+          <a href="?q={{ search_query }}&category={{ category_id }}&active={{ active_filter }}&page={{ page_obj.next_page_number }}">Keyingi &rsaquo;</a>
+          <a href="?q={{ search_query }}&category={{ category_id }}&active={{ active_filter }}&page={{ page_obj.paginator.num_pages }}">Oxirgi &raquo;</a>
         {% endif %}
       </span>
     </div>

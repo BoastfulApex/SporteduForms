@@ -24,6 +24,8 @@ urlpatterns = [
     path('form-categories/<int:pk>/edit/', views.form_category_update, name='form_category_update'),
     path('form-categories/<int:pk>/delete/', views.form_category_delete, name='form_category_delete'),
     path("questions/", views.question_list, name="question_list"),
+    path("questions/upload/", views.question_upload, name="question_upload"),
+    path("questions/sample/", views.question_sample_download, name="question_sample_download"),
     path("questions/create/", views.question_create, name="question_create"),
     path("questions/<int:pk>/edit/", views.question_update, name="question_edit"),
     path("questions/<int:pk>/delete/", views.question_delete, name="question_delete"),
@@ -37,5 +39,9 @@ urlpatterns = [
     # path('administrators/<int:pk>', views.admin_detail, name='admin_update'),
     # path('admin_delete/<int:pk>', views.AdminDelete.as_view(), name='admin_delete'),
     path('schedule/create/', views.schedule_create, name='schedule_create'),
-    path('ajax/load-months/', views.ajax_load_months, name='ajax_load_months'),   
+    path('ajax/load-months/', views.ajax_load_months, name='ajax_load_months'),
+
+    path('reports/', views.report_select, name='report_select'),
+    path('reports/<int:category_id>/', views.report_detail, name='report_detail'),
+    path('reports/<int:category_id>/export/', views.report_export_excel, name='report_export_excel'),
 ]

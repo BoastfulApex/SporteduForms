@@ -1,0 +1,144 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %}Reyting hisoboti{% endblock %}
+{% block body_class %}dashboard{% endblock %}
+
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <h1>{{ category.name_uz }} — Reyting</h1>
+      <div class="d-flex gap-2">
+        {% if report_data %}
+        <a href="{% url 'report_export_excel' category.id %}?{{ request.GET.urlencode }}" class="btn btn-success btn-sm">
+          <i class="fas fa-file-excel"></i> Excel yuklab olish
+        </a>
+        {% endif %}
+        <a href="{% url 'report_select' %}" class="btn btn-secondary btn-sm">Orqaga</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    <!-- Oy tanlash formasi -->
+    <div class="card mb-3">
+      <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label mb-1">Yil</label>
+            <select name="year" id="id_year" class="form-control">
+              <option value="">-- Yil tanlang --</option>
+              {% for opt in form.year.field.queryset %}
+                <option value="{{ opt.pk }}" {% if form.year.value == opt.pk|stringformat:"s" %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label mb-1">Oy</label>
+            <select name="month" id="id_month" class="form-control">
+              <option value="">-- Oy tanlang --</option>
+              {% for opt in form.month.field.queryset %}
+                <option value="{{ opt.pk }}" {% if form.month.value == opt.pk|stringformat:"s" %}selected{% endif %}>{{ opt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Ko'rish</button>
+          </div>
+          {% if selected_month %}
+          <div class="col-md-2">
+            <a href="?" class="btn btn-outline-secondary w-100">Tozalash</a>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">
+          O'qituvchilar reytingi
+          {% if selected_month %}<small class="text-muted ms-2">— {{ selected_month }}</small>{% endif %}
+        </h3>
+      </div>
+      <div class="card-body p-0">
+        {% if report_data %}
+        <table class="table table-bordered table-hover mb-0">
+          <thead class="thead-dark">
+            <tr>
+              <th>#</th>
+              <th>O'qituvchi</th>
+              <th>To'plagan ball</th>
+              <th>Maksimal ball</th>
+              <th>Natija (%)</th>
+              <th>Daraja</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in report_data %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td><strong>{{ item.teacher }}</strong></td>
+              <td>{{ item.total_score }}</td>
+              <td>{{ item.max_score }}</td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="progress flex-grow-1" style="height:16px; min-width:80px;">
+                    <div class="progress-bar
+                      {% if item.percent >= 80 %}bg-success
+                      {% elif item.percent >= 60 %}bg-warning
+                      {% else %}bg-danger{% endif %}"
+                      style="width:{{ item.percent }}%"></div>
+                  </div>
+                  <span>{{ item.percent }}%</span>
+                </div>
+              </td>
+              <td>
+                {% if item.percent >= 80 %}
+                  <span class="badge bg-success">A'lo</span>
+                {% elif item.percent >= 60 %}
+                  <span class="badge bg-warning text-dark">Yaxshi</span>
+                {% else %}
+                  <span class="badge bg-danger">Past</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="p-4 text-muted text-center">Ma'lumot topilmadi.</div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="{% static 'js/app.js' %}"></script>
+  <script>
+    $(document).ready(function () {
+      $('#id_year').change(function () {
+        var yearId = $(this).val();
+        var $month = $('#id_month');
+        $month.empty().append(new Option('-- Oy tanlang --', ''));
+        if (!yearId) return;
+        $.ajax({
+          url: "{% url 'ajax_load_months' %}",
+          data: { year_id: yearId },
+          success: function (data) {
+            $.each(data, function (i, item) {
+              $month.append(new Option(item.name, item.id));
+            });
+          }
+        });
+      });
+    });
+  </script>
+{% endblock %}

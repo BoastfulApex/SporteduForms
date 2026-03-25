@@ -1,0 +1,110 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %}Savollarni fayl orqali yuklash{% endblock %}
+{% block body_class %}dashboard{% endblock %}
+
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <h1>Excel orqali savollar yuklash</h1>
+        </div>
+        <div class="col-sm-6">
+          <a href="{% url 'question_list' %}" class="btn btn-secondary float-right">Orqaga</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="card card-primary">
+          <div class="card-header">
+            <h3 class="card-title">Fayl yuklash</h3>
+          </div>
+          <div class="card-body">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+              {% endfor %}
+            {% endif %}
+
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="form-group">
+                <label>So'rovnoma turini tanlang</label>
+                {{ form.form_category }}
+              </div>
+              <div class="form-group mt-3">
+                <label>Excel fayl (.xlsx)</label>
+                {{ form.file }}
+                <small class="form-text text-muted">
+                  Faqat <strong>.xlsx</strong> formatdagi fayl qabul qilinadi.
+                </small>
+              </div>
+              <button type="submit" class="btn btn-success mt-3">Yuklash</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card card-info">
+          <div class="card-header">
+            <h3 class="card-title">Fayl formati haqida</h3>
+          </div>
+          <div class="card-body">
+            <p>Excel fayl quyidagi tartibda bo'lishi kerak:</p>
+            <table class="table table-bordered table-sm" style="font-size:12px;">
+              <thead class="thead-dark">
+                <tr>
+                  <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th>
+                  <th>F</th><th>G</th><th>H</th><th>I</th><th>J</th>
+                  <th>K</th><th>L</th><th>M</th><th>N</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Savol UZ</td>
+                  <td>Savol RU</td>
+                  <td>Javob 1 UZ</td>
+                  <td>Javob 1 RU</td>
+                  <td>Ball 1</td>
+                  <td>Javob 2 UZ</td>
+                  <td>Javob 2 RU</td>
+                  <td>Ball 2</td>
+                  <td>Javob 3 UZ</td>
+                  <td>Javob 3 RU</td>
+                  <td>Ball 3</td>
+                  <td>Javob 4 UZ</td>
+                  <td>Javob 4 RU</td>
+                  <td>Ball 4</td>
+                </tr>
+              </tbody>
+            </table>
+            <ul class="mt-2" style="font-size:13px;">
+              <li>1-qator sarlavha (o'tkazib yuboriladi)</li>
+              <li>Har bir savol uchun 4 ta javob va ularning ballari</li>
+              <li>Javob bo'sh bo'lsa o'tkazib yuboriladi</li>
+            </ul>
+            <a href="{% url 'question_sample_download' %}" class="btn btn-outline-info btn-sm mt-2">
+              <i class="fas fa-download"></i> Namuna faylni yuklab olish
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  <script src="{% static 'js/app.js' %}"></script>
+{% endblock javascripts %}

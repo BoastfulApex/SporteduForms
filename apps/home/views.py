@@ -105,7 +105,7 @@ class TeacherDelete(DeleteView):
 
 def study_module_list(request):
 
-    # Filial bo‘yicha modullar
+    # Filial bo'yicha modullar
     modules = StudyModule.objects.all()
 
     # Qidiruv
@@ -139,7 +139,7 @@ def study_module_create(request):
         form = StudyModuleForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect("study_module_list")  # Ro‘yxatga qaytadi
+            return redirect("study_module_list")  # Ro'yxatga qaytadi
     else:
         form = StudyModuleForm()
 
@@ -176,7 +176,7 @@ def study_module_upload(request):
                         )
                         count += 1
 
-                messages.success(request, f"{count} ta modul muvaffaqiyatli qo‘shildi!")
+                messages.success(request, f"{count} ta modul muvaffaqiyatli qo'shildi!")
                 return redirect("study_module_list")
 
             except Exception as e:
@@ -277,7 +277,7 @@ def form_category_create(request):
             return redirect('form_category_list')
     else:
         form = FormCategoryForm()
-    return render(request, 'home/user/formcategory/form_category_form.html', {'form': form, 'title': 'Yangi kategoriya qo‘shish', 'segment': 'form_categories'})
+    return render(request, 'home/user/formcategory/form_category_form.html', {'form': form, 'title': "Yangi kategoriya qo'shish", 'segment': 'form_categories'})
 
 
 def form_category_update(request, pk):
@@ -304,24 +304,115 @@ def form_category_delete(request, pk):
 
 def question_list(request):
     search_query = request.GET.get('q', '')
-    questions = Question.objects.all().order_by('-id')
+    category_id = request.GET.get('category', '')
+    active_filter = request.GET.get('active', '')
+
+    questions = Question.objects.select_related('form_category').order_by('-id')
 
     if search_query:
         questions = questions.filter(
             Q(question_uz__icontains=search_query) |
             Q(question_ru__icontains=search_query)
         )
+    if category_id:
+        questions = questions.filter(form_category_id=category_id)
+    if active_filter == '1':
+        questions = questions.filter(active=True)
+    elif active_filter == '0':
+        questions = questions.filter(active=False)
 
-    paginator = Paginator(questions, 20)  # Har sahifada 20 ta savol
+    paginator = Paginator(questions, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
         'page_obj': page_obj,
         'search_query': search_query,
+        'category_id': category_id,
+        'active_filter': active_filter,
+        'categories': FormCategory.objects.all(),
         'segment': 'questions'
     }
     return render(request, "home/user/question/question_list.html", context)
+
+def question_sample_download(request):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Savollar"
+    headers = [
+        "Savol (UZ)", "Savol (RU)",
+        "Javob 1 (UZ)", "Javob 1 (RU)", "Ball 1",
+        "Javob 2 (UZ)", "Javob 2 (RU)", "Ball 2",
+        "Javob 3 (UZ)", "Javob 3 (RU)", "Ball 3",
+        "Javob 4 (UZ)", "Javob 4 (RU)", "Ball 4",
+    ]
+    ws.append(headers)
+    ws.append([
+        "O'qituvchi darsni qanday tushuntiradi?",
+        "Как учитель объясняет урок?",
+        "Juda yaxshi", "Очень хорошо", 5,
+        "Yaxshi", "Хорошо", 4,
+        "Qoniqarli", "Удовлетворительно", 3,
+        "Yomon", "Плохо", 1,
+    ])
+    ws.append([
+        "Dars qiziqarlimi?",
+        "Интересен ли урок?",
+        "Ha, juda qiziqarli", "Да, очень интересно", 5,
+        "Qisman", "Частично", 3,
+        "Yo'q", "Нет", 1,
+        "", "", 0,
+    ])
+    response = HttpResponse(
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    response["Content-Disposition"] = 'attachment; filename="savollar_namuna.xlsx"'
+    wb.save(response)
+    return response
+
+
+def question_upload(request):
+    if request.method == "POST":
+        form = QuestionUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            form_category = form.cleaned_data["form_category"]
+            file = request.FILES["file"]
+            try:
+                workbook = openpyxl.load_workbook(file)
+                sheet = workbook.active
+                count = 0
+                for row in sheet.iter_rows(min_row=2, values_only=True):
+                    # Ustunlar: question_uz, question_ru, a1_uz, a1_ru, score1, a2_uz, a2_ru, score2, a3_uz, a3_ru, score3, a4_uz, a4_ru, score4
+                    if not row[0]:
+                        continue
+                    question = Question.objects.create(
+                        form_category=form_category,
+                        question_uz=row[0] or "",
+                        question_ru=row[1] or "",
+                        active=True,
+                    )
+                    # Har bir javob (4 ta): (uz, ru, ball) -> 3 ta ustun
+                    for i in range(4):
+                        base = 2 + i * 3
+                        ans_uz = row[base] if len(row) > base else None
+                        ans_ru = row[base + 1] if len(row) > base + 1 else None
+                        score = row[base + 2] if len(row) > base + 2 else 0
+                        if ans_uz:
+                            Answer.objects.create(
+                                question=question,
+                                answer_uz=ans_uz,
+                                answer_ru=ans_ru or ans_uz,
+                                score=score or 0,
+                            )
+                    count += 1
+                messages.success(request, f"{count} ta savol muvaffaqiyatli qo'shildi!")
+                return redirect("question_list")
+            except Exception as e:
+                messages.error(request, f"Xato: {str(e)}")
+    else:
+        form = QuestionUploadForm()
+    return render(request, "home/user/question/question_upload.html", {"form": form, "segment": "questions"})
+
 
 def question_create(request):
     if request.method == "POST":
@@ -410,7 +501,7 @@ def answer_delete(request, pk):
 #     """
 #     Bitta question tanlanadi va bir nechta javoblar formset orqali kiritiladi.
 #     """
-#     title = "Javoblar qo‘shish"
+#     title = "Javoblar qo'shish"
 #     question_form = QuestionSelectForm(request.POST or None)
 #     formset = AddAnswerFormSet(request.POST or None, queryset=Answer.objects.none())
 
@@ -436,7 +527,7 @@ def answer_delete(request, pk):
 
 
 def add_answer_view(request):
-    title = "Javoblar qo‘shish"
+    title = "Javoblar qo'shish"
     question_form = QuestionSelectForm(request.POST or None)
     formset = AddAnswerFormSet(request.POST or None, queryset=Answer.objects.none())
 
@@ -449,7 +540,7 @@ def add_answer_view(request):
                     answer.question = question
                     answer.save()
 
-            # 🔁 AJAX yuborilgan bo‘lsa, JSON qaytaramiz
+            # 🔁 AJAX yuborilgan bo'lsa, JSON qaytaramiz
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
                 return JsonResponse({
                     "success": True,
@@ -458,7 +549,7 @@ def add_answer_view(request):
             else:
                 return redirect('answer_list')
 
-        # Agar xato bo‘lsa
+        # Agar xato bo'lsa
         elif request.headers.get('x-requested-with') == 'XMLHttpRequest':
             return JsonResponse({
                 "success": False,
@@ -484,12 +575,11 @@ def schedule_create(request):
             year = form.cleaned_data['year']
             month = form.cleaned_data['month']
             filial = form.cleaned_data['filial']
-            # bu yerda siz ma’lumotni saqlashingiz yoki qayta ishlashingiz mumkin
             selected_month = form.cleaned_data['month']
 
             teachers = Teacher.objects.filter(
                 teacher_modules__group__month_id=month
-            ).distinct()   
+            ).distinct()
 
             report_data = []
 
@@ -497,12 +587,10 @@ def schedule_create(request):
                 teacher_modules = GroupModuleTeacher.objects.filter(teacher=teacher)
                 teacher_total_score = 0
                 teacher_max_score = 0
-                                    
 
                 for module in teacher_modules:
-                    # Shu modulga berilgan barcha javoblar
                     user_answers = UserAnswer.objects.filter(module=module).all()
-                    for ua in user_answers:  # user_answers = UserAnswer queryset
+                    for ua in user_answers:
                         for ans in ua.answer.all():
                             teacher_total_score += ans.score
                             teacher_max_score += Answer.objects.filter(question=ua.question).aggregate(max_score=Max('score'))['max_score'] or 0
@@ -513,7 +601,6 @@ def schedule_create(request):
                     'max_score': teacher_max_score,
                     'percent': percent,
                 })
-            # Foiz bo‘yicha tartiblash
             report_data.sort(key=lambda x: x['percent'], reverse=True)
         return render(request, 'home/reports/teacher_report.html', {
             'form': form,
@@ -523,6 +610,312 @@ def schedule_create(request):
     else:
         form = ScheduleForm()
     return render(request, 'home/reports/select_date.html', {'form': form, 'segment': 'reports'})
+
+
+# ===================== YANGI HISOBOT TIZIMI =====================
+
+def report_select(request):
+    """So'rovnoma turini tanlash sahifasi"""
+    categories = FormCategory.objects.all()
+    return render(request, 'home/reports/report_select.html', {
+        'categories': categories,
+        'segment': 'reports'
+    })
+
+
+def report_detail(request, category_id):
+    """Tanlangan so'rovnoma bo'yicha hisobot"""
+    from apps.main.models import StudyField
+    category = get_object_or_404(FormCategory, pk=category_id)
+    questions = Question.objects.filter(form_category=category).prefetch_related('answer_set')
+
+    if category.for_rating:
+        # ===== REYTING HISOBOT =====
+        from apps.main.forms import MonthSelectForm
+        form = MonthSelectForm(request.GET or None)
+        report_data = []
+        selected_month = None
+
+        if form.is_valid():
+            selected_month = form.cleaned_data['month']
+            teachers = Teacher.objects.filter(
+                teacher_modules__group__month=selected_month
+            ).distinct()
+
+            for teacher in teachers:
+                teacher_modules = GroupModuleTeacher.objects.filter(
+                    teacher=teacher,
+                    group__month=selected_month
+                )
+                total_score = 0
+                max_score = 0
+                for module in teacher_modules:
+                    user_answers = UserAnswer.objects.filter(
+                        module=module,
+                        question__form_category=category
+                    )
+                    for ua in user_answers:
+                        for ans in ua.answer.all():
+                            total_score += ans.score
+                        max_score += Answer.objects.filter(
+                            question=ua.question
+                        ).aggregate(m=Max('score'))['m'] or 0
+                if max_score == 0:
+                    continue
+                percent = round(total_score / max_score * 100, 2)
+                report_data.append({
+                    'teacher': teacher.name,
+                    'total_score': total_score,
+                    'max_score': max_score,
+                    'percent': percent,
+                })
+            report_data.sort(key=lambda x: x['percent'], reverse=True)
+
+        return render(request, 'home/reports/report_rating.html', {
+            'category': category,
+            'form': form,
+            'report_data': report_data,
+            'selected_month': selected_month,
+            'segment': 'reports',
+        })
+
+    else:
+        # ===== YO'NALISH BO'YICHA HISOBOT =====
+        study_fields = StudyField.objects.all()
+        report_data = []
+
+        for question in questions:
+            answers = Answer.objects.filter(question=question)
+            # Barcha UserAnswer'lar bu savol uchun
+            total_respondents = UserAnswer.objects.filter(question=question).count()
+
+            answers_data = []
+            for answer in answers:
+                count = UserAnswer.objects.filter(
+                    question=question,
+                    answer=answer
+                ).count()
+                percent = round(count / total_respondents * 100, 1) if total_respondents else 0
+                answers_data.append({
+                    'answer_uz': answer.answer_uz,
+                    'answer_ru': answer.answer_ru,
+                    'score': answer.score,
+                    'count': count,
+                    'percent': percent,
+                })
+
+            # Yo'nalishlar bo'yicha breakdown
+            fields_data = []
+            for sf in study_fields:
+                sf_count = UserAnswer.objects.filter(
+                    question=question,
+                    user__group__study_field=sf
+                ).count()
+                if sf_count == 0:
+                    continue
+                sf_answers = []
+                for answer in answers:
+                    a_count = UserAnswer.objects.filter(
+                        question=question,
+                        answer=answer,
+                        user__group__study_field=sf
+                    ).count()
+                    a_pct = round(a_count / sf_count * 100, 1) if sf_count else 0
+                    sf_answers.append({
+                        'answer_uz': answer.answer_uz,
+                        'count': a_count,
+                        'percent': a_pct,
+                    })
+                fields_data.append({
+                    'study_field': sf.study_field_uz,
+                    'total': sf_count,
+                    'answers': sf_answers,
+                })
+
+            report_data.append({
+                'question_uz': question.question_uz,
+                'question_ru': question.question_ru,
+                'total_respondents': total_respondents,
+                'answers': answers_data,
+                'fields_data': fields_data,
+            })
+
+        return render(request, 'home/reports/report_survey.html', {
+            'category': category,
+            'report_data': report_data,
+            'segment': 'reports',
+        })
+
+
+def report_export_excel(request, category_id):
+    from apps.main.models import StudyField
+    from apps.main.forms import MonthSelectForm
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils import get_column_letter
+
+    category = get_object_or_404(FormCategory, pk=category_id)
+
+    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+    sub_fill = PatternFill(start_color='D6E4F0', end_color='D6E4F0', fill_type='solid')
+    center = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    left = Alignment(vertical='center', wrap_text=True)
+    thin = Side(style='thin', color='000000')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    def style_header(cell):
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center
+        cell.border = border
+
+    def style_cell(cell, align=None):
+        cell.alignment = align or left
+        cell.border = border
+
+    wb = openpyxl.Workbook()
+
+    if category.for_rating:
+        # ===== REYTING EXCEL =====
+        form = MonthSelectForm(request.GET or None)
+        selected_month = None
+        report_data = []
+
+        if form.is_valid():
+            selected_month = form.cleaned_data['month']
+            teachers = Teacher.objects.filter(
+                teacher_modules__group__month=selected_month
+            ).distinct()
+            for teacher in teachers:
+                teacher_modules = GroupModuleTeacher.objects.filter(
+                    teacher=teacher, group__month=selected_month
+                )
+                total_score = 0
+                max_score = 0
+                for module in teacher_modules:
+                    user_answers = UserAnswer.objects.filter(
+                        module=module, question__form_category=category
+                    )
+                    for ua in user_answers:
+                        for ans in ua.answer.all():
+                            total_score += ans.score
+                        max_score += Answer.objects.filter(
+                            question=ua.question
+                        ).aggregate(m=Max('score'))['m'] or 0
+                if max_score == 0:
+                    continue
+                percent = round(total_score / max_score * 100, 2)
+                report_data.append({
+                    'teacher': teacher.name,
+                    'total_score': total_score,
+                    'max_score': max_score,
+                    'percent': percent,
+                })
+            report_data.sort(key=lambda x: x['percent'], reverse=True)
+
+        ws = wb.active
+        ws.title = 'Reyting'
+        headers = ['#', "O'qituvchi", "To'plagan ball", "Maksimal ball", "Natija (%)"]
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=h)
+            style_header(cell)
+        for i, item in enumerate(report_data, 1):
+            row = [i, item['teacher'], item['total_score'], item['max_score'], item['percent']]
+            for col, val in enumerate(row, 1):
+                cell = ws.cell(row=i + 1, column=col, value=val)
+                style_cell(cell, center if col != 2 else left)
+        ws.column_dimensions['A'].width = 5
+        ws.column_dimensions['B'].width = 35
+        for c in ['C', 'D', 'E']:
+            ws.column_dimensions[c].width = 18
+        filename = f"reyting_{category.name_uz}_{selected_month or 'barchasi'}.xlsx"
+
+    else:
+        # ===== SO'ROVNOMA EXCEL =====
+        study_fields = StudyField.objects.all()
+        questions = Question.objects.filter(form_category=category)
+
+        ws = wb.active
+        ws.title = 'Hisobot'
+        row_num = 1
+
+        for question in questions:
+            answers = Answer.objects.filter(question=question)
+            total_respondents = UserAnswer.objects.filter(question=question).count()
+
+            # Savol sarlavhasi
+            cell = ws.cell(row=row_num, column=1, value=f"Savol: {question.question_uz}")
+            cell.font = Font(bold=True, size=12)
+            cell.fill = PatternFill(start_color='1F4E79', end_color='1F4E79', fill_type='solid')
+            cell.font = Font(bold=True, color='FFFFFF', size=11)
+            cell.alignment = left
+            cell.border = border
+            ws.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=5)
+            row_num += 1
+
+            # Umumiy natija sarlavha
+            for col, h in enumerate(['Javob', 'Ball', 'Soni', 'Foiz (%)'], 1):
+                cell = ws.cell(row=row_num, column=col, value=h)
+                style_header(cell)
+            row_num += 1
+
+            for answer in answers:
+                count = UserAnswer.objects.filter(question=question, answer=answer).count()
+                percent = round(count / total_respondents * 100, 1) if total_respondents else 0
+                row_vals = [answer.answer_uz, answer.score, count, percent]
+                for col, val in enumerate(row_vals, 1):
+                    cell = ws.cell(row=row_num, column=col, value=val)
+                    style_cell(cell, center if col != 1 else left)
+                row_num += 1
+
+            # Yo'nalishlar bo'yicha
+            row_num += 1
+            cell = ws.cell(row=row_num, column=1, value="Yo'nalishlar bo'yicha:")
+            cell.font = Font(bold=True)
+            cell.fill = sub_fill
+            cell.border = border
+            ans_list = list(answers)
+            ws.merge_cells(start_row=row_num, start_column=1, end_row=row_num, end_column=2 + len(ans_list))
+            row_num += 1
+
+            # Yo'nalish sarlavha
+            header_row = ["Yo'nalish", "Jami"] + [a.answer_uz[:25] for a in ans_list]
+            for col, h in enumerate(header_row, 1):
+                cell = ws.cell(row=row_num, column=col, value=h)
+                style_header(cell)
+            row_num += 1
+
+            for sf in study_fields:
+                sf_count = UserAnswer.objects.filter(
+                    question=question, user__group__study_field=sf
+                ).count()
+                if sf_count == 0:
+                    continue
+                row_vals = [sf.study_field_uz, sf_count]
+                for answer in ans_list:
+                    a_count = UserAnswer.objects.filter(
+                        question=question, answer=answer, user__group__study_field=sf
+                    ).count()
+                    a_pct = round(a_count / sf_count * 100, 1) if sf_count else 0
+                    row_vals.append(f"{a_count} ({a_pct}%)")
+                for col, val in enumerate(row_vals, 1):
+                    cell = ws.cell(row=row_num, column=col, value=val)
+                    style_cell(cell, center if col != 1 else left)
+                row_num += 1
+
+            row_num += 2  # Bo'sh qator savollar orasida
+
+        ws.column_dimensions['A'].width = 40
+        for i in range(2, 10):
+            ws.column_dimensions[get_column_letter(i)].width = 20
+        filename = f"sorovnoma_{category.name_uz}.xlsx"
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    wb.save(response)
+    return response
 
 
 def ajax_load_months(request):

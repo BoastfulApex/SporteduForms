@@ -1,0 +1,51 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %}Hisobotlar{% endblock %}
+{% block body_class %}dashboard{% endblock %}
+
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1>Hisobotlar</h1>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="row">
+      {% for cat in categories %}
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <div class="card-body d-flex flex-column justify-content-between">
+            <div>
+              <h5 class="card-title">{{ cat.name_uz }}</h5>
+              <p class="text-muted small">{{ cat.name_ru }}</p>
+              {% if cat.for_rating %}
+                <span class="badge bg-warning text-dark">Reyting so'rovnomasi</span>
+              {% else %}
+                <span class="badge bg-info text-dark">Umumiy so'rovnoma</span>
+              {% endif %}
+            </div>
+            <a href="{% url 'report_detail' cat.id %}" class="btn btn-primary mt-3">
+              Hisobotni ko'rish
+            </a>
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12">
+        <p class="text-muted">So'rovnoma turlari topilmadi.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  <script src="{% static 'js/app.js' %}"></script>
+{% endblock %}

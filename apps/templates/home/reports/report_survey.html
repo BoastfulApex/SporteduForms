@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+{% load static %}
+{% block title %}So'rovnoma hisoboti{% endblock %}
+{% block body_class %}dashboard{% endblock %}
+
+{% block stylesheets %}
+  <link href="{% static 'css/app.css' %}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid d-flex justify-content-between align-items-center">
+      <h1>{{ category.name_uz }} — Hisobot</h1>
+      <div class="d-flex gap-2">
+        {% if report_data %}
+        <a href="{% url 'report_export_excel' category.id %}" class="btn btn-success btn-sm">
+          <i class="fas fa-file-excel"></i> Excel yuklab olish
+        </a>
+        {% endif %}
+        <a href="{% url 'report_select' %}" class="btn btn-secondary btn-sm">Orqaga</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="content">
+    {% if report_data %}
+      {% for item in report_data %}
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">{{ forloop.counter }}. {{ item.question_uz }}</h5>
+          {% if item.question_ru %}
+            <small class="text-white-50">{{ item.question_ru }}</small>
+          {% endif %}
+        </div>
+        <div class="card-body">
+
+          <!-- Umumiy natija -->
+          <p class="text-muted mb-2">
+            Jami javob berganlar: <strong>{{ item.total_respondents }}</strong> ta
+          </p>
+
+          <table class="table table-bordered table-sm mb-4">
+            <thead class="thead-light">
+              <tr>
+                <th>Javob</th>
+                <th>Ball</th>
+                <th>Soni</th>
+                <th>Foiz</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ans in item.answers %}
+              <tr>
+                <td>{{ ans.answer_uz }}</td>
+                <td>{{ ans.score }}</td>
+                <td>{{ ans.count }}</td>
+                <td>{{ ans.percent }}%</td>
+                <td style="width:200px;">
+                  <div class="progress" style="height:14px;">
+                    <div class="progress-bar bg-info" style="width:{{ ans.percent }}%;"></div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <!-- Yo'nalishlar bo'yicha breakdown -->
+          {% if item.fields_data %}
+          <h6 class="text-secondary">Yo'nalishlar bo'yicha:</h6>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm">
+              <thead class="thead-light">
+                <tr>
+                  <th>Yo'nalish</th>
+                  <th>Jami</th>
+                  {% for ans in item.answers %}
+                    <th>{{ ans.answer_uz|truncatechars:20 }}</th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for fd in item.fields_data %}
+                <tr>
+                  <td><strong>{{ fd.study_field }}</strong></td>
+                  <td>{{ fd.total }}</td>
+                  {% for fa in fd.answers %}
+                  <td>
+                    {{ fa.count }}
+                    <small class="text-muted">({{ fa.percent }}%)</small>
+                  </td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="card">
+        <div class="card-body text-center text-muted">
+          Bu so'rovnoma bo'yicha hali javoblar mavjud emas.
+        </div>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+  <script src="{% static 'js/app.js' %}"></script>
+{% endblock %}
