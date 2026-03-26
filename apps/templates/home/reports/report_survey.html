@@ -85,7 +85,7 @@
           {% endif %}
 
           {% if not item.is_text_answer %}
-          <table class="table table-bordered table-sm mb-4">
+          <table class="table table-bordered table-sm mb-3">
             <thead class="thead-light">
               <tr>
                 <th>Javob</th>
@@ -111,38 +111,45 @@
               {% endfor %}
             </tbody>
           </table>
-          {% endif %}
 
-          <!-- Yo'nalishlar bo'yicha breakdown -->
-          {% if item.fields_data %}
-          <h6 class="text-secondary">Yo'nalishlar bo'yicha:</h6>
-          <div class="table-responsive">
-            <table class="table table-bordered table-sm">
-              <thead class="thead-light">
-                <tr>
-                  <th>Yo'nalish</th>
-                  <th>Jami</th>
-                  {% for ans in item.answers %}
-                    <th>{{ ans.answer_uz|truncatechars:20 }}</th>
+          <!-- Har bir javob uchun yo'nalishlar bo'yicha breakdown -->
+          {% for ans in item.answers %}
+          {% if ans.sf_breakdown %}
+          <div class="mb-3">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="badge bg-secondary">{{ forloop.counter }}</span>
+              <strong style="font-size:0.9rem;">{{ ans.answer_uz }}</strong>
+              <small class="text-muted">— jami {{ ans.count }} ta ({{ ans.percent }}%)</small>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-bordered mb-0" style="font-size:0.85rem;">
+                <thead style="background:#f0f4f8;">
+                  <tr>
+                    <th>Yo'nalish</th>
+                    <th class="text-center">Soni</th>
+                    <th class="text-center">Foiz</th>
+                    <th style="width:160px;">Grafik</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for sf in ans.sf_breakdown %}
+                  <tr>
+                    <td>{{ sf.study_field }}</td>
+                    <td class="text-center">{{ sf.count }}</td>
+                    <td class="text-center">{{ sf.percent }}%</td>
+                    <td>
+                      <div class="progress" style="height:10px;">
+                        <div class="progress-bar bg-primary" style="width:{{ sf.percent }}%;"></div>
+                      </div>
+                    </td>
+                  </tr>
                   {% endfor %}
-                </tr>
-              </thead>
-              <tbody>
-                {% for fd in item.fields_data %}
-                <tr>
-                  <td><strong>{{ fd.study_field }}</strong></td>
-                  <td>{{ fd.total }}</td>
-                  {% for fa in fd.answers %}
-                  <td>
-                    {{ fa.count }}
-                    <small class="text-muted">({{ fa.percent }}%)</small>
-                  </td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
+          {% endif %}
+          {% endfor %}
           {% endif %}
 
         </div>

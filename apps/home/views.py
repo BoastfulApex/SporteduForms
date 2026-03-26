@@ -758,41 +758,42 @@ def report_detail(request, category_id):
                     answer=answer
                 ).count()
                 percent = round(count / total_respondents * 100, 1) if total_respondents else 0
+
+                # Har bir javob uchun yo'nalishlar bo'yicha breakdown
+                sf_breakdown = []
+                for sf in study_fields:
+                    # General survey: telegram_user__field_of_study
+                    sf_count = UserAnswer.objects.filter(
+                        question=question,
+                        answer=answer,
+                        telegram_user__field_of_study=sf
+                    ).count()
+                    # Rating survey: user__group__study_field
+                    sf_count += UserAnswer.objects.filter(
+                        question=question,
+                        answer=answer,
+                        user__group__study_field=sf
+                    ).count()
+                    if sf_count == 0:
+                        continue
+                    sf_pct = round(sf_count / count * 100, 1) if count else 0
+                    sf_breakdown.append({
+                        'study_field': sf.study_field_uz,
+                        'count': sf_count,
+                        'percent': sf_pct,
+                    })
+                sf_breakdown.sort(key=lambda x: x['count'], reverse=True)
+
                 answers_data.append({
                     'answer_uz': answer.answer_uz,
                     'answer_ru': answer.answer_ru,
                     'score': answer.score,
                     'count': count,
                     'percent': percent,
+                    'sf_breakdown': sf_breakdown,
                 })
 
-            # Yo'nalishlar bo'yicha breakdown
-            fields_data = []
-            for sf in study_fields:
-                sf_count = UserAnswer.objects.filter(
-                    question=question,
-                    user__group__study_field=sf
-                ).count()
-                if sf_count == 0:
-                    continue
-                sf_answers = []
-                for answer in answers:
-                    a_count = UserAnswer.objects.filter(
-                        question=question,
-                        answer=answer,
-                        user__group__study_field=sf
-                    ).count()
-                    a_pct = round(a_count / sf_count * 100, 1) if sf_count else 0
-                    sf_answers.append({
-                        'answer_uz': answer.answer_uz,
-                        'count': a_count,
-                        'percent': a_pct,
-                    })
-                fields_data.append({
-                    'study_field': sf.study_field_uz,
-                    'total': sf_count,
-                    'answers': sf_answers,
-                })
+            fields_data = []  # Eski struktura — saqlanadi (Excel uchun)
 
             report_data.append({
                 'question_uz': question.question_uz,
