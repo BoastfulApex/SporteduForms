@@ -229,9 +229,47 @@ def get_questions(category_id):
     return list(
         Question.objects.filter(form_category_id=category_id, active=True).order_by("id")
     )
-    
+
 
 @sync_to_async
 def get_user_study_field(user_id):
     user = TelegramUser.objects.filter(telegram_id=user_id).first()
     return user.field_of_study if user else None
+
+
+@sync_to_async
+def save_general_answer(telegram_user_id, question_id, answer_id):
+    """Umumiy so'rovnoma uchun javobni saqlaydi (Student/module siz)."""
+    tg_user = TelegramUser.objects.filter(telegram_id=telegram_user_id).first()
+    if not tg_user:
+        return None
+    question = Question.objects.filter(id=question_id).first()
+    answer = Answer.objects.filter(id=int(answer_id)).first()
+    if not question or not answer:
+        return None
+    ua, _ = UserAnswer.objects.get_or_create(
+        telegram_user=tg_user,
+        question=question,
+        user=None,
+        module=None,
+    )
+    ua.answer.add(answer)
+    ua.save()
+    return ua
+
+
+@sync_to_async
+def save_general_text_answer(telegram_user_id, question_id, text):
+    """Umumiy so'rovnoma uchun matnli javobni saqlaydi."""
+    tg_user = TelegramUser.objects.filter(telegram_id=telegram_user_id).first()
+    if not tg_user:
+        return None
+    ua, _ = UserAnswer.objects.get_or_create(
+        telegram_user=tg_user,
+        question_id=question_id,
+        user=None,
+        module=None,
+    )
+    ua.text_answer = text
+    ua.save()
+    return ua

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.main.models import Filial, Student, GroupModuleTeacher
+from apps.main.models import Filial, Student, GroupModuleTeacher, TelegramUser
 
 
 class FormCategory(models.Model):
@@ -45,14 +45,16 @@ class Answer(models.Model):
       
 
 class UserAnswer(models.Model):
-    user = models.ForeignKey(Student, on_delete=models.CASCADE)
+    user = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
+    telegram_user = models.ForeignKey(TelegramUser, on_delete=models.CASCADE, null=True, blank=True)
     question = models.ForeignKey(Question, on_delete=models.CASCADE)
-    module = models.ForeignKey(GroupModuleTeacher, on_delete=models.CASCADE, null=True)
+    module = models.ForeignKey(GroupModuleTeacher, on_delete=models.CASCADE, null=True, blank=True)
     answer = models.ManyToManyField(Answer, null=True)
     text_answer = models.TextField(max_length=3000, null=True, blank=True)
 
-
     def __str__(self):
-        return f'{self.user.id} - {self.question.question_uz}'
+        if self.user:
+            return f'{self.user.id} - {self.question.question_uz}'
+        return f'{self.telegram_user_id} - {self.question.question_uz}'
 
 
