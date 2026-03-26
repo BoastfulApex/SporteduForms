@@ -38,8 +38,53 @@
           <!-- Umumiy natija -->
           <p class="text-muted mb-2">
             Jami javob berganlar: <strong>{{ item.total_respondents }}</strong> ta
+            {% if item.is_text_answer %}
+              &nbsp;|&nbsp; Matnli javoblar: <strong>{{ item.text_answers_count }}</strong> ta
+            {% endif %}
           </p>
 
+          {% if item.is_text_answer and item.ai_categories %}
+          <!-- AI Kategoriyalashtirish -->
+          <div class="mb-4">
+            <h6 class="text-secondary d-flex align-items-center gap-2">
+              <span class="badge bg-purple text-white" style="background:#6f42c1;">AI</span>
+              Takliflar kategoriyalar bo'yicha tahlili
+            </h6>
+            <div class="row g-2">
+              {% for cat in item.ai_categories %}
+              <div class="col-md-6">
+                <div class="card border-0 shadow-sm h-100">
+                  <div class="card-body p-3">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                      <strong class="text-dark" style="font-size:0.9rem;">{{ cat.category }}</strong>
+                      <span class="badge" style="background:#6f42c1;color:#fff;font-size:0.85rem;">{{ cat.percent }}%</span>
+                    </div>
+                    <div class="progress mb-2" style="height:8px;">
+                      <div class="progress-bar" style="width:{{ cat.percent }}%;background:#6f42c1;"></div>
+                    </div>
+                    <small class="text-muted">{{ cat.count }} ta javob</small>
+                    {% if cat.examples %}
+                    <div class="mt-2">
+                      {% for ex in cat.examples %}
+                      <div class="text-muted" style="font-size:0.8rem;border-left:3px solid #dee2e6;padding-left:8px;margin-bottom:4px;">
+                        "{{ ex }}"
+                      </div>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% elif item.is_text_answer %}
+          <div class="alert alert-light text-muted small">
+            Matnli javoblar mavjud emas yoki AI tahlil amalga oshmadi.
+          </div>
+          {% endif %}
+
+          {% if not item.is_text_answer %}
           <table class="table table-bordered table-sm mb-4">
             <thead class="thead-light">
               <tr>
@@ -66,6 +111,7 @@
               {% endfor %}
             </tbody>
           </table>
+          {% endif %}
 
           <!-- Yo'nalishlar bo'yicha breakdown -->
           {% if item.fields_data %}

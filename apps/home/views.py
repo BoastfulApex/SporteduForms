@@ -730,13 +730,26 @@ def report_detail(request, category_id):
 
     else:
         # ===== YO'NALISH BO'YICHA HISOBOT =====
+        from utils.ai_categorize import categorize_text_answers
         study_fields = StudyField.objects.all()
         report_data = []
 
         for question in questions:
             answers = Answer.objects.filter(question=question)
-            # Barcha UserAnswer'lar bu savol uchun
             total_respondents = UserAnswer.objects.filter(question=question).count()
+
+            # Matnli savol bo'lsa — AI kategoriyalashtirish
+            ai_categories = []
+            text_answers_list = []
+            if question.text_answer:
+                text_answers_list = list(
+                    UserAnswer.objects.filter(question=question)
+                    .exclude(text_answer__isnull=True)
+                    .exclude(text_answer='')
+                    .values_list('text_answer', flat=True)
+                )
+                if text_answers_list:
+                    ai_categories = categorize_text_answers(question.question_uz, text_answers_list)
 
             answers_data = []
             for answer in answers:
@@ -784,7 +797,10 @@ def report_detail(request, category_id):
             report_data.append({
                 'question_uz': question.question_uz,
                 'question_ru': question.question_ru,
+                'is_text_answer': question.text_answer,
                 'total_respondents': total_respondents,
+                'text_answers_count': len(text_answers_list),
+                'ai_categories': ai_categories,
                 'answers': answers_data,
                 'fields_data': fields_data,
             })
