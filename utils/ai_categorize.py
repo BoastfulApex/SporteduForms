@@ -1,57 +1,99 @@
-import os
-import json
-from anthropic import Anthropic
+"""
+Matnli javoblarni TF-IDF + K-Means yordamida kategoriyalarga ajratadi.
+Internetga ulanish yoki API kerak emas — to'liq lokal ishlaydi.
+"""
+import re
+from collections import Counter
 
-client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+def _clean(text: str) -> str:
+    text = text.lower().strip()
+    text = re.sub(r'[^\w\s]', ' ', text, flags=re.UNICODE)
+    text = re.sub(r'\s+', ' ', text)
+    return text
 
 
-def categorize_text_answers(question_text: str, answers: list[str]) -> list[dict]:
+def categorize_text_answers(question_text: str, answers: list) -> list:
     """
-    AI yordamida matnli javoblarni asosiy kategoriyalarga ajratadi.
+    Matnli javoblarni klasterlarga ajratadi.
     Qaytaradi: [{'category': '...', 'count': N, 'percent': X.X, 'examples': [...]}]
     """
+    answers = [a for a in answers if a and str(a).strip()]
     if not answers:
         return []
 
-    answers_numbered = "\n".join(f"{i+1}. {a}" for i, a in enumerate(answers) if a and a.strip())
-    if not answers_numbered:
-        return []
+    n = len(answers)
 
-    prompt = f"""Quyidagi so'rovnoma savoli uchun foydalanuvchilar tomonidan berilgan matnli javoblarni tahlil qiling.
-
-Savol: {question_text}
-
-Javoblar:
-{answers_numbered}
-
-Vazifa: Ushbu javoblarni mantiqiy toifalarga ajrating.
-- 3 dan 6 gacha toifa aniqlang
-- Har bir toifaga qancha javob kirishi va foizini hisoblang
-- Har bir toifadan 1-2 ta namunaviy javob ko'rsating
-
-Javobni FAQAT JSON formatida bering (boshqa matn yo'q):
-[
-  {{
-    "category": "Toifa nomi (o'zbekcha)",
-    "count": N,
-    "percent": X.X,
-    "examples": ["misol 1", "misol 2"]
-  }}
-]"""
+    # Kamida 3 ta javob bo'lmasa, klasterlash shart emas
+    if n < 3:
+        return [{
+            'category': 'Barcha javoblar',
+            'count': n,
+            'percent': 100.0,
+            'examples': answers[:2],
+        }]
 
     try:
-        message = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}]
+        from sklearn.feature_extraction.text import TfidfVectorizer
+        from sklearn.cluster import KMeans
+        import numpy as np
+
+        cleaned = [_clean(a) for a in answers]
+
+        # Klaster soni: 3 dan 6 gacha (javob soniga qarab)
+        n_clusters = min(6, max(3, n // 5))
+
+        vectorizer = TfidfVectorizer(
+            max_features=200,
+            min_df=1,
+            analyzer='char_wb',  # har qanday tilda ishlaydi (lotin, kirill, o'zbek)
+            ngram_range=(3, 5),
         )
-        raw = message.content[0].text.strip()
-        # JSON blokdan tozalash
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        return json.loads(raw.strip())
+        X = vectorizer.fit_transform(cleaned)
+
+        km = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+        labels = km.fit_predict(X)
+
+        # Har bir klaster uchun eng ko'p uchraydigan so'zlar asosida nom yasash
+        feature_names = vectorizer.get_feature_names_out()
+        categories = []
+
+        for cluster_id in range(n_clusters):
+            cluster_indices = [i for i, l in enumerate(labels) if l == cluster_id]
+            if not cluster_indices:
+                continue
+
+            count = len(cluster_indices)
+            percent = round(count / n * 100, 1)
+
+            # Klaster markazi asosida kalit so'zlar
+            center = km.cluster_centers_[cluster_id]
+            top_indices = np.argsort(center)[::-1][:5]
+            keywords = [feature_names[i] for i in top_indices if len(feature_names[i]) > 3]
+
+            # Klaster nomi: birinchi namunaviy javobdan qisqa nom
+            examples = [answers[i] for i in cluster_indices[:3]]
+            # Eng qisqa javobni nom sifatida ol (lekin 60 belgidan oshmasin)
+            shortest = min(examples, key=len)
+            category_name = shortest[:60] + ('...' if len(shortest) > 60 else '')
+
+            categories.append({
+                'category': category_name,
+                'count': count,
+                'percent': percent,
+                'examples': examples[:2],
+            })
+
+        # Foiz bo'yicha kamayish tartibida
+        categories.sort(key=lambda x: x['percent'], reverse=True)
+        return categories
+
     except Exception as e:
-        print(f"AI kategoriyalashtirish xatosi: {e}")
-        return []
+        print(f"Kategoriyalashtirish xatosi: {e}")
+        # Fallback: barcha javoblarni bitta kategoriyada ko'rsat
+        return [{
+            'category': 'Barcha javoblar',
+            'count': n,
+            'percent': 100.0,
+            'examples': answers[:3],
+        }]
